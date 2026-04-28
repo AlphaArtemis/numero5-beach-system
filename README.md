@@ -152,9 +152,11 @@ La traccia audio strumentale e' in:
 
 ```text
 public/audio/Cerulean_Tides.mp3
+public/audio/White_Stone_Terrace.mp3
+public/audio/Salt_on_the_Balcony.mp3
 ```
 
-La musica non parte automaticamente: il cliente deve toccare `MUSIC ON`. Questo mantiene la web app elegante e compatibile con i browser mobile.
+La musica non parte automaticamente: il cliente deve toccare `MUSIC ON`. Il selettore accanto al pulsante permette di scegliere la traccia. Questo mantiene la web app elegante e compatibile con i browser mobile.
 
 ## Dove cambiare foto nei file
 

@@ -7,7 +7,23 @@ const DEFAULT_LOCALE = "it";
 const LOCATION_COORDS = "42.750225,10.241150";
 const GOOGLE_MAP_EMBED_URL = `https://www.google.com/maps?q=${LOCATION_COORDS}&z=18&output=embed`;
 const GOOGLE_MAP_DIRECTIONS_URL = `https://www.google.com/maps/search/?api=1&query=${LOCATION_COORDS}`;
-const SOUNDTRACK_SRC = "/audio/Cerulean_Tides.mp3";
+const SOUNDTRACK_TRACKS = [
+  {
+    label: "Cerulean",
+    title: "Cerulean Tides",
+    src: "/audio/Cerulean_Tides.mp3",
+  },
+  {
+    label: "Stone",
+    title: "White Stone Terrace",
+    src: "/audio/White_Stone_Terrace.mp3",
+  },
+  {
+    label: "Salt",
+    title: "Salt on the Balcony",
+    src: "/audio/Salt_on_the_Balcony.mp3",
+  },
+];
 
 const statusStyles = {
   "green-plus": {
@@ -326,10 +342,12 @@ function App() {
   const [form, setForm] = useState(initialForm);
   const [beachData, setBeachData] = useState(loadMorningUpdate);
   const [saveMessage, setSaveMessage] = useState("");
+  const [activeTrackIndex, setActiveTrackIndex] = useState(0);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [musicMessage, setMusicMessage] = useState("");
   const soundtrackRef = useRef(null);
   const t = translations[DEFAULT_LOCALE];
+  const activeTrack = SOUNDTRACK_TRACKS[activeTrackIndex] ?? SOUNDTRACK_TRACKS[0];
   const currentStatus = statusStyles[beachData.status] ?? statusStyles["green-minus"];
   const availabilityText = getAvailabilityText(beachData.availability);
   const windRotation = getWindRotation(beachData.meteoWind.direction);
@@ -543,6 +561,39 @@ function App() {
       });
   }
 
+  function changeSoundtrack(event) {
+    const nextTrackIndex = Number(event.target.value);
+    const soundtrack = soundtrackRef.current;
+    const shouldResume = Boolean(soundtrack && !soundtrack.paused);
+
+    if (soundtrack) {
+      soundtrack.pause();
+      soundtrack.currentTime = 0;
+    }
+
+    setActiveTrackIndex(nextTrackIndex);
+    setIsMusicPlaying(false);
+    setMusicMessage("");
+
+    if (!shouldResume) return;
+
+    window.setTimeout(() => {
+      const nextSoundtrack = soundtrackRef.current;
+      if (!nextSoundtrack) return;
+
+      nextSoundtrack.volume = 0.36;
+      nextSoundtrack
+        .play()
+        .then(() => {
+          setIsMusicPlaying(true);
+        })
+        .catch(() => {
+          setIsMusicPlaying(false);
+          setMusicMessage("Tocca MUSIC ON per cambiare traccia.");
+        });
+    }, 60);
+  }
+
   function renderMusicButton(extraClassName = "") {
     return (
       <button
@@ -564,11 +615,31 @@ function App() {
     );
   }
 
+  function renderSoundtrackControl(wrapperClassName = "", buttonClassName = "", selectClassName = "") {
+    return (
+      <div className={`flex items-center gap-2 ${wrapperClassName}`}>
+        {renderMusicButton(buttonClassName)}
+        <select
+          aria-label="Scegli colonna sonora"
+          className={`min-h-[50px] rounded-2xl border border-white/80 bg-white/90 px-3 py-2 text-sm font-black text-beach-ink shadow-soft backdrop-blur outline-none transition duration-300 hover:-translate-y-0.5 focus:ring-4 focus:ring-sky-100 ${selectClassName}`}
+          value={activeTrackIndex}
+          onChange={changeSoundtrack}
+        >
+          {SOUNDTRACK_TRACKS.map((track, index) => (
+            <option key={track.src} value={index}>
+              {track.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-beach-foam pb-24 text-beach-ink sm:pb-0">
       <audio
         ref={soundtrackRef}
-        src={SOUNDTRACK_SRC}
+        src={activeTrack.src}
         loop
         preload="none"
         onPause={() => setIsMusicPlaying(false)}
@@ -595,7 +666,7 @@ function App() {
           </a>
 
           <div className="flex gap-2 text-sm font-black">
-            {renderMusicButton("hidden sm:inline-flex")}
+            {renderSoundtrackControl("hidden sm:flex", "", "w-28")}
             <a className="nav-pill" href="#prenota">
               {t.nav.book}
             </a>
@@ -1142,7 +1213,7 @@ function App() {
       </footer>
 
       <div className="fixed bottom-[5.6rem] right-4 z-50 sm:hidden">
-        {renderMusicButton("bg-[#0a192f]")}
+        {renderSoundtrackControl("flex-col items-end", "bg-[#0a192f]", "w-[7.75rem]")}
         {musicMessage ? (
           <p className="mt-2 max-w-[12rem] rounded-xl bg-white/95 px-3 py-2 text-xs font-black text-beach-ink shadow-soft">
             {musicMessage}
