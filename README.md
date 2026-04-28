@@ -146,6 +146,16 @@ Nome app: `Numero 5 Beach System`
 Short name: `Numero 5`  
 Theme color: blu mare `#0a6fa3`
 
+## Colonna sonora
+
+La traccia audio strumentale e' in:
+
+```text
+public/audio/Cerulean_Tides.mp3
+```
+
+La musica non parte automaticamente: il cliente deve toccare `MUSIC ON`. Questo mantiene la web app elegante e compatibile con i browser mobile.
+
 ## Dove cambiare foto nei file
 
 Le immagini sostituibili sono in:

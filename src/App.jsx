@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { today, windLegend } from "./data/today";
 import { translations } from "./data/translations";
 
@@ -7,6 +7,7 @@ const DEFAULT_LOCALE = "it";
 const LOCATION_COORDS = "42.750225,10.241150";
 const GOOGLE_MAP_EMBED_URL = `https://www.google.com/maps?q=${LOCATION_COORDS}&z=18&output=embed`;
 const GOOGLE_MAP_DIRECTIONS_URL = `https://www.google.com/maps/search/?api=1&query=${LOCATION_COORDS}`;
+const SOUNDTRACK_SRC = "/audio/Cerulean_Tides.mp3";
 
 const statusStyles = {
   "green-plus": {
@@ -325,6 +326,9 @@ function App() {
   const [form, setForm] = useState(initialForm);
   const [beachData, setBeachData] = useState(loadMorningUpdate);
   const [saveMessage, setSaveMessage] = useState("");
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [musicMessage, setMusicMessage] = useState("");
+  const soundtrackRef = useRef(null);
   const t = translations[DEFAULT_LOCALE];
   const currentStatus = statusStyles[beachData.status] ?? statusStyles["green-minus"];
   const availabilityText = getAvailabilityText(beachData.availability);
@@ -514,8 +518,62 @@ function App() {
     setSaveMessage("Dati iniziali ripristinati.");
   }
 
+  function toggleSoundtrack() {
+    const soundtrack = soundtrackRef.current;
+    if (!soundtrack) return;
+
+    if (!soundtrack.paused) {
+      soundtrack.pause();
+      setIsMusicPlaying(false);
+      setMusicMessage("");
+      return;
+    }
+
+    soundtrack.volume = 0.36;
+    setMusicMessage("");
+
+    soundtrack
+      .play()
+      .then(() => {
+        setIsMusicPlaying(true);
+      })
+      .catch(() => {
+        setIsMusicPlaying(false);
+        setMusicMessage("Tocca il pulsante per attivare la musica.");
+      });
+  }
+
+  function renderMusicButton(extraClassName = "") {
+    return (
+      <button
+        aria-label={isMusicPlaying ? "Ferma la musica" : "Avvia la musica"}
+        aria-pressed={isMusicPlaying}
+        className={`inline-flex min-h-[50px] items-center justify-center gap-2 rounded-2xl border border-white/80 px-4 py-2 text-sm font-black text-white shadow-soft backdrop-blur transition duration-300 hover:-translate-y-0.5 ${
+          isMusicPlaying ? "bg-[#0a192f]" : "bg-[#0a192f]/88"
+        } ${extraClassName}`}
+        type="button"
+        onClick={toggleSoundtrack}
+      >
+        <span className="flex h-4 w-5 items-end justify-center gap-[3px]" aria-hidden="true">
+          <span className={`w-1 rounded-full bg-current ${isMusicPlaying ? "h-4 animate-pulse" : "h-2"}`} />
+          <span className={`w-1 rounded-full bg-current ${isMusicPlaying ? "h-3 animate-pulse" : "h-3"}`} />
+          <span className={`w-1 rounded-full bg-current ${isMusicPlaying ? "h-5 animate-pulse" : "h-2"}`} />
+        </span>
+        {isMusicPlaying ? "MUSIC OFF" : "MUSIC ON"}
+      </button>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-beach-foam pb-24 text-beach-ink sm:pb-0">
+      <audio
+        ref={soundtrackRef}
+        src={SOUNDTRACK_SRC}
+        loop
+        preload="none"
+        onPause={() => setIsMusicPlaying(false)}
+        onPlay={() => setIsMusicPlaying(true)}
+      />
       <header className="relative overflow-hidden bg-[#e9f7fb] text-beach-ink">
         <img
           className="absolute inset-0 h-full w-full object-cover"
@@ -537,6 +595,7 @@ function App() {
           </a>
 
           <div className="flex gap-2 text-sm font-black">
+            {renderMusicButton("hidden sm:inline-flex")}
             <a className="nav-pill" href="#prenota">
               {t.nav.book}
             </a>
@@ -1081,6 +1140,15 @@ function App() {
         <p className="text-lg font-black text-[#ff8c00]">Numero 5 Beach System</p>
         <p className="mt-1">Marina di Campo · Prenota su WhatsApp {whatsappDisplay}</p>
       </footer>
+
+      <div className="fixed bottom-[5.6rem] right-4 z-50 sm:hidden">
+        {renderMusicButton("bg-[#0a192f]")}
+        {musicMessage ? (
+          <p className="mt-2 max-w-[12rem] rounded-xl bg-white/95 px-3 py-2 text-xs font-black text-beach-ink shadow-soft">
+            {musicMessage}
+          </p>
+        ) : null}
+      </div>
 
       <a
         className="fixed bottom-4 left-4 right-4 z-50 inline-flex min-h-[58px] items-center justify-center rounded-2xl bg-[#25D366] px-5 py-3 text-lg font-black text-white shadow-[0_20px_48px_rgba(10,25,47,0.28)] sm:hidden"
