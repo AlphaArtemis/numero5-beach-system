@@ -5,6 +5,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: "0.0.0.0",
-    allowedHosts: ["e689-77-32-114-24.ngrok-free.app"],
+    allowedHosts: ["numero5-beach-system.vercel.app"],
   },
 });

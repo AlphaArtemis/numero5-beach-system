@@ -1,5 +1,5 @@
-import heroBeachPhoto from "../assets/foto-giornaliere/spiaggia-ombrellone.png";
-import windMapPhoto from "../assets/mappe/golfo-marina-di-campo.png";
+import heroBeachPhoto from "../assets/foto-giornaliere/spiaggia-ombrellone.webp";
+import windMapPhoto from "../assets/mappe/golfo-marina-di-campo.webp";
 
 // Modifica questo file ogni mattina per aggiornare app, foto e numero WhatsApp.
 export const today = {

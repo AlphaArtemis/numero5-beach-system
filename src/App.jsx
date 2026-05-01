@@ -10,17 +10,14 @@ const GOOGLE_MAP_DIRECTIONS_URL = `https://www.google.com/maps/search/?api=1&que
 const SOUNDTRACK_TRACKS = [
   {
     label: "Cerulean",
-    title: "Cerulean Tides",
     src: "/audio/Cerulean_Tides.mp3",
   },
   {
     label: "Stone",
-    title: "White Stone Terrace",
     src: "/audio/White_Stone_Terrace.mp3",
   },
   {
     label: "Salt",
-    title: "Salt on the Balcony",
     src: "/audio/Salt_on_the_Balcony.mp3",
   },
 ];
@@ -282,7 +279,14 @@ function TodayConditionsCard({ beachData, currentStatus, quickWhatsAppUrl, t }) 
     <aside className="today-hero-card">
       <div className="grid grid-cols-[86px_minmax(0,1fr)] gap-3 sm:grid-cols-[0.42fr_0.58fr] sm:gap-4 lg:block">
         <div className="relative overflow-hidden rounded-2xl bg-[#dff3f8]">
-          <img className="aspect-square h-full w-full object-cover sm:aspect-[4/3] lg:aspect-[16/9]" src={beachData.dailySeaPhoto} alt="Foto del mare di oggi" />
+          <img
+            className="aspect-square h-full w-full object-cover sm:aspect-[4/3] lg:aspect-[16/9]"
+            src={beachData.dailySeaPhoto}
+            alt="Foto del mare di oggi"
+            width="1280"
+            height="960"
+            decoding="async"
+          />
           <span className={`absolute left-3 top-3 hidden rounded-full border px-3 py-1 text-xs font-black shadow-soft sm:inline-flex sm:items-center ${currentStatus.className}`}>
             <span className={`mr-1.5 inline-block h-2.5 w-2.5 rounded-full ${currentStatus.dotClassName}`} />
             {currentStatus.label}
@@ -650,6 +654,10 @@ function App() {
           className="absolute inset-0 h-full w-full object-cover"
           src={beachData.heroImage}
           alt="Spiaggia di Marina di Campo con ombrellone e lettino"
+          width="1280"
+          height="960"
+          decoding="async"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/30 to-beach-foam/95" />
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-beach-foam via-beach-foam/80 to-transparent" />
@@ -889,7 +897,10 @@ function App() {
                   className="aspect-[4/3] w-full object-cover sm:aspect-[16/9]"
                   src={beachData.dailySeaPhoto}
                   alt="Foto aggiornata del mare di oggi"
+                  width="1280"
+                  height="960"
                   loading="lazy"
+                  decoding="async"
                 />
                 <div className="p-5">
                   <p className="text-lg font-black text-beach-ink">{beachData.conditionText}</p>
@@ -951,7 +962,15 @@ function App() {
             </div>
 
             <div className="premium-card relative overflow-hidden bg-[#0a192f]">
-              <img className="aspect-[4/3] w-full object-cover" src={beachData.windMapImage} alt="Golfo di Marina di Campo dall'alto" loading="lazy" />
+              <img
+                className="aspect-[4/3] w-full object-cover"
+                src={beachData.windMapImage}
+                alt="Golfo di Marina di Campo dall'alto"
+                width="1200"
+                height="704"
+                loading="lazy"
+                decoding="async"
+              />
               <div className="absolute inset-0 bg-gradient-to-b from-[#0a192f]/0 via-transparent to-[#0a192f]/58" />
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center" data-wind-direction={beachData.meteoWind.direction}>
                 <div
@@ -1027,6 +1046,10 @@ function App() {
                       className="aspect-[4/3] w-full rounded-2xl object-cover"
                       src={beachData.dailySeaPhoto}
                       alt="Anteprima foto della spiaggia caricata"
+                      width="1280"
+                      height="960"
+                      loading="lazy"
+                      decoding="async"
                     />
 
                     <label className="mt-4 block">
