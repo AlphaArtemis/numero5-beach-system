@@ -52,3 +52,9 @@ Data: 2026-05-02
 - Le vecchie immagini PNG non importate nella build sono state lasciate nella cartella sorgente per non eliminare materiale fotografico senza conferma.
 - La cartella `stampa/` resta fuori dal commit della web app: contiene asset operativi per flyer/QR, non necessari al deploy Vercel.
 - Il layout e i testi visibili non sono stati modificati.
+
+## Verifica post-deploy
+
+- `https://numero5-beach-system.vercel.app/assets/spiaggia-ombrellone-DsbI2aV0.webp`: HTTP 200, `Cache-Control: public, max-age=31536000, immutable`.
+- `https://numero5-beach-system.vercel.app/assets/golfo-marina-di-campo-DDqfTZla.webp`: HTTP 200, `Cache-Control: public, max-age=31536000, immutable`.
+- `https://numero5-beach-system.vercel.app/audio/Cerulean_Tides.mp3`: HTTP 200, `Cache-Control: public, max-age=31536000, immutable`.
