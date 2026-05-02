@@ -58,10 +58,9 @@ const iconToneClasses = {
 
 const initialForm = {
   name: "",
-  phone: "",
   date: "",
-  people: "2",
-  notes: "",
+  umbrellas: "1",
+  sunbeds: "2",
 };
 
 function getTodayInputValue() {
@@ -91,36 +90,49 @@ function getAvailabilityText(availability = {}) {
 
 function getWindRotation(direction = "") {
   const normalizedDirection = direction
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toUpperCase()
-    .replace(/\s+/g, "")
-    .replace(/[.-]/g, "");
+    .replace(/[^A-Z]/g, "");
 
   const directionAngles = {
     N: 0,
     NORD: 0,
+    NNE: 22.5,
     NE: 45,
     NORDEST: 45,
     GRECALE: 45,
+    ENE: 67.5,
     E: 90,
     EST: 90,
+    ESE: 112.5,
     SE: 135,
     SUDEST: 135,
     SCIROCCO: 135,
+    SSE: 157.5,
     S: 180,
     SUD: 180,
+    SSO: 202.5,
+    SSW: 202.5,
     SO: 225,
     SW: 225,
     SUDOVEST: 225,
     LIBECCIO: 225,
+    OSO: 247.5,
+    WSW: 247.5,
     O: 270,
     W: 270,
     OVEST: 270,
     PONENTE: 270,
+    ONO: 292.5,
+    WNW: 292.5,
     NO: 315,
     NW: 315,
     NORDOVEST: 315,
     MAESTRALE: 315,
+    NNO: 337.5,
+    NNW: 337.5,
   };
 
   return directionAngles[normalizedDirection] ?? 0;
@@ -360,17 +372,16 @@ function App() {
   const whatsappDisplay = formatWhatsAppDisplay(beachData.whatsappNumber);
   const quickWhatsAppText = encodeURIComponent(
     [
-      "Ciao Numero 5 Beach System, vorrei sapere se c'e' disponibilita' per un ombrellone.",
+      "Ciao Noleggio Numero 5, vorrei prenotare attrezzatura da spiaggia.",
       "",
-      `Ho visto in app: ${currentStatus.summary}`,
-      `Vento Meteo Militare: ${beachData.meteoWind.direction} · ${beachData.meteoWind.intensity}`,
-      `Meteo: ${beachData.weather.summary}`,
-      `Disponibilita': ${availabilityText}`,
+      "Nome:",
+      "Data:",
+      "Numero ombrelloni:",
+      "Numero lettini:",
     ].join("\n"),
   );
   const quickWhatsAppUrl = `https://wa.me/${normalizeWhatsAppNumber(beachData.whatsappNumber)}?text=${quickWhatsAppText}`;
   const windArrowStyle = {
-    transform: `rotate(${windRotation}deg)`,
     "--wind-arrow-rotation": `${windRotation}deg`,
     "--wind-arrow-from": isGreenStatus ? "#34d399" : "#ff8c00",
     "--wind-arrow-to": isGreenStatus ? "#0f766e" : "#ef4f5e",
@@ -419,18 +430,12 @@ function App() {
 
   function buildWhatsAppMessage() {
     return [
-      "Ciao Numero 5 Beach System, vorrei prenotare un ombrellone.",
+      "Ciao Noleggio Numero 5, vorrei prenotare attrezzatura da spiaggia.",
       "",
       `Nome: ${form.name}`,
-      `Telefono: ${form.phone}`,
       `Data: ${form.date}`,
-      `Numero persone: ${form.people}`,
-      `Note: ${form.notes || "Nessuna nota"}`,
-      "",
-      `Condizioni viste in app: ${beachData.wind.name} (${currentStatus.label})`,
-      `Vento Meteo Militare: ${beachData.meteoWind.direction} · ${beachData.meteoWind.intensity}`,
-      `Meteo: ${beachData.weather.summary}`,
-      `Disponibilita': ${availabilityText}`,
+      `Numero ombrelloni: ${form.umbrellas}`,
+      `Numero lettini: ${form.sunbeds}`,
     ].join("\n");
   }
 
@@ -664,18 +669,8 @@ function App() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#fff5e4]/55 via-[#fff8ed]/12 to-beach-foam/92" />
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-beach-foam via-beach-foam/80 to-transparent" />
 
-        <nav className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-          <a className="flex min-h-[50px] items-center gap-3 text-beach-ink" href="#top" aria-label="Noleggio Numero 5">
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/90 text-beach-ink shadow-soft backdrop-blur">
-              <LogoMark className="h-10 w-10" />
-            </span>
-            <span className="leading-tight">
-              <span className="block text-sm font-black uppercase">Noleggio</span>
-              <span className="block text-xs font-black uppercase text-beach-ink/75">Numero 5</span>
-            </span>
-          </a>
-
-          <div className="flex gap-2 text-sm font-black">
+        <nav className="relative z-10 mx-auto flex max-w-6xl items-center justify-end gap-3 px-5 py-5 sm:px-8">
+          <div className="flex flex-1 justify-start gap-2 text-sm font-black sm:justify-end">
             {renderSoundtrackControl("hidden sm:flex", "", "w-28")}
             <a className="nav-pill" href="#prenota">
               {t.nav.book}
@@ -684,17 +679,21 @@ function App() {
               {t.nav.wind}
             </a>
           </div>
+
+          <a className="flex min-h-[50px] items-center gap-2 rounded-2xl bg-white/80 px-3 py-2 text-beach-ink shadow-soft backdrop-blur sm:gap-3" href="#top" aria-label="Noleggio Numero 5">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/90 text-beach-ink">
+              <LogoMark className="h-8 w-8" />
+            </span>
+            <span className="leading-tight">
+              <span className="block text-xs font-black uppercase sm:text-sm">Noleggio</span>
+              <span className="block text-[0.65rem] font-black uppercase text-beach-ink/75 sm:text-xs">Numero 5</span>
+            </span>
+          </a>
         </nav>
 
         <section id="top" className="relative z-10 mx-auto grid max-w-6xl gap-6 px-5 pb-12 pt-4 sm:px-8 sm:pb-16 md:pt-8 lg:min-h-[74svh] lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
           <div className="text-center lg:text-left">
-            <div className="mx-auto flex w-fit flex-col items-center text-beach-ink lg:mx-0">
-              <LogoMark className="h-12 w-12 drop-shadow-[0_10px_18px_rgba(10,25,47,0.18)] sm:h-14 sm:w-14" />
-              <p className="mt-1 text-xs font-black uppercase leading-tight sm:text-sm">Noleggio Numero 5</p>
-              <p className="text-[0.65rem] font-black uppercase text-beach-ink/80 sm:text-xs">{t.hero.location}</p>
-            </div>
-
-            <h1 className="wind-title mx-auto mt-4 max-w-3xl text-3xl font-black uppercase leading-none sm:text-4xl md:text-5xl lg:mx-0 lg:text-[3.65rem] xl:text-[4rem]">
+            <h1 className="wind-title mx-auto mt-10 max-w-3xl text-3xl font-black uppercase leading-none sm:mt-12 sm:text-4xl md:text-5xl lg:mx-0 lg:text-[3.65rem] xl:text-[4rem]">
               {t.hero.title}
             </h1>
             <p className="mx-auto mt-2 max-w-2xl text-2xl font-black italic leading-none text-[#e96400] drop-shadow-[0_2px_0_rgba(255,255,255,0.42)] sm:text-4xl md:text-5xl lg:mx-0">
@@ -758,7 +757,14 @@ function App() {
                 {t.booking.body}
               </p>
 
-              <div className="mt-6 grid gap-3">
+              <div className="mt-6 rounded-2xl border border-[#ecd9bf] bg-white/95 p-4 shadow-soft backdrop-blur">
+                <p className="text-sm font-black uppercase text-[#e97900]">{t.booking.equipmentNoteTitle}</p>
+                <p className="mt-2 text-base font-bold leading-7 text-beach-ink">
+                  {t.booking.equipmentNoteText}
+                </p>
+              </div>
+
+              <div className="mt-4 grid gap-3">
                 <div className={`rounded-2xl border px-4 py-3 text-sm font-black shadow-soft ${currentStatus.className}`}>
                   <span className={`mr-2 inline-block h-3 w-3 rounded-full ${currentStatus.dotClassName}`} />
                   Oggi: {currentStatus.summary}
@@ -790,20 +796,7 @@ function App() {
                   />
                 </label>
 
-                <label className="block">
-                  <span className="field-label">Telefono</span>
-                  <input
-                    className="field-input"
-                    name="phone"
-                    type="tel"
-                    autoComplete="tel"
-                    value={form.phone}
-                    onChange={updateField}
-                    required
-                  />
-                </label>
-
-                <label className="block">
+                <label className="block sm:col-span-2">
                   <span className="field-label">Data</span>
                   <input
                     className="field-input"
@@ -816,28 +809,31 @@ function App() {
                   />
                 </label>
 
-                <label className="block sm:col-span-2">
-                  <span className="field-label">Numero persone</span>
+                <label className="block">
+                  <span className="field-label">Numero ombrelloni</span>
                   <input
                     className="field-input"
-                    name="people"
+                    name="umbrellas"
                     type="number"
-                    min="1"
+                    min="0"
                     max="20"
-                    value={form.people}
+                    value={form.umbrellas}
                     onChange={updateField}
                     required
                   />
                 </label>
 
-                <label className="block sm:col-span-2">
-                  <span className="field-label">Note</span>
-                  <textarea
-                    className="field-input min-h-28 resize-y"
-                    name="notes"
-                    value={form.notes}
+                <label className="block">
+                  <span className="field-label">Numero lettini</span>
+                  <input
+                    className="field-input"
+                    name="sunbeds"
+                    type="number"
+                    min="0"
+                    max="40"
+                    value={form.sunbeds}
                     onChange={updateField}
-                    placeholder="Orario preferito, lettini, richieste particolari..."
+                    required
                   />
                 </label>
               </div>
@@ -877,7 +873,14 @@ function App() {
               <article className="rounded-2xl border border-white/90 bg-white/95 p-4 shadow-soft">
                 <h3 className="text-lg font-black text-beach-ink">{t.howItWorks.whereTitle}</h3>
                 <p className="mt-1 text-base font-bold leading-7 text-slate-800">{t.howItWorks.whereText}</p>
-                <p className="mt-2 text-base font-black text-beach-ink">WhatsApp {whatsappDisplay}</p>
+                <a
+                  className="premium-cta mt-4 w-full text-center text-base"
+                  href={quickWhatsAppUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t.howItWorks.whatsappCta}
+                </a>
               </article>
             </div>
           </div>
@@ -1012,7 +1015,14 @@ function App() {
               <h2 className="section-title">{t.howItWorks.whereTitle}</h2>
               <p className="mt-4 text-lg font-bold leading-8 text-slate-800">{t.howItWorks.whereText}</p>
               <p className="mt-3 text-lg font-black leading-7 text-beach-ink">{t.howItWorks.whereDetail}</p>
-              <p className="mt-3 text-lg font-black text-beach-ink">WhatsApp {whatsappDisplay}</p>
+              <a
+                className="premium-cta mt-5 w-full text-center sm:w-auto"
+                href={quickWhatsAppUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t.howItWorks.whatsappCta}
+              </a>
             </div>
 
             <div className="premium-card overflow-hidden p-3 sm:p-4">
