@@ -688,18 +688,18 @@ function App() {
         <section id="top" className="relative z-10 mx-auto grid max-w-6xl gap-6 px-5 pb-12 pt-4 sm:px-8 sm:pb-16 md:pt-8 lg:min-h-[74svh] lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
           <div className="text-center lg:text-left">
             <div className="mx-auto flex w-fit flex-col items-center text-beach-ink lg:mx-0">
-              <LogoMark className="h-16 w-16 drop-shadow-[0_10px_18px_rgba(10,25,47,0.18)] sm:h-20 sm:w-20" />
-              <p className="mt-1 text-sm font-black uppercase leading-tight sm:text-base">Noleggio Numero 5</p>
-              <p className="text-xs font-black uppercase text-beach-ink/80 sm:text-sm">{t.hero.location}</p>
+              <LogoMark className="h-12 w-12 drop-shadow-[0_10px_18px_rgba(10,25,47,0.18)] sm:h-14 sm:w-14" />
+              <p className="mt-1 text-xs font-black uppercase leading-tight sm:text-sm">Noleggio Numero 5</p>
+              <p className="text-[0.65rem] font-black uppercase text-beach-ink/80 sm:text-xs">{t.hero.location}</p>
             </div>
 
-            <h1 className="mx-auto mt-6 max-w-4xl text-5xl font-black uppercase leading-none text-beach-ink drop-shadow-[0_3px_0_rgba(255,255,255,0.45)] sm:text-7xl md:text-8xl lg:mx-0 lg:text-[6.4rem]">
+            <h1 className="mx-auto mt-4 max-w-3xl text-4xl font-black uppercase leading-none text-beach-ink drop-shadow-[0_3px_0_rgba(255,255,255,0.45)] sm:text-5xl md:text-6xl lg:mx-0 lg:text-[4.8rem]">
               {t.hero.title}
             </h1>
-            <p className="mx-auto mt-3 max-w-3xl text-4xl font-black italic leading-none text-[#e96400] drop-shadow-[0_2px_0_rgba(255,255,255,0.42)] sm:text-6xl lg:mx-0">
+            <p className="mx-auto mt-2 max-w-2xl text-2xl font-black italic leading-none text-[#e96400] drop-shadow-[0_2px_0_rgba(255,255,255,0.42)] sm:text-4xl md:text-5xl lg:mx-0">
               {t.hero.payoff}
             </p>
-            <p className="mx-auto mt-5 inline-flex max-w-3xl items-center justify-center rounded-2xl bg-[#0a192f] px-5 py-3 text-base font-black uppercase leading-tight text-white shadow-[0_16px_34px_rgba(10,25,47,0.22)] sm:px-8 sm:text-2xl lg:mx-0">
+            <p className="mx-auto mt-4 inline-flex max-w-2xl items-center justify-center rounded-2xl bg-[#0a192f] px-4 py-2.5 text-sm font-black uppercase leading-tight text-white shadow-[0_16px_34px_rgba(10,25,47,0.22)] sm:px-6 sm:text-lg md:text-xl lg:mx-0">
               {t.hero.subtitle}
             </p>
 
@@ -707,11 +707,11 @@ function App() {
               <TodayConditionsCard beachData={beachData} currentStatus={currentStatus} quickWhatsAppUrl={quickWhatsAppUrl} t={t} />
             </div>
 
-            <p className="mx-auto mt-4 max-w-xl text-lg font-bold leading-8 text-slate-900 lg:mx-0">
+            <p className="mx-auto mt-4 max-w-xl text-base font-bold leading-7 text-slate-900 sm:text-lg lg:mx-0">
               {t.hero.body}
             </p>
 
-            <div className="mt-7 flex flex-wrap justify-center gap-3 lg:justify-start">
+            <div className="mt-6 flex flex-wrap justify-center gap-3 lg:justify-start">
               <a className="premium-cta" href="#prenota">
                 {t.hero.primaryCta}
               </a>
@@ -983,14 +983,14 @@ function App() {
                   style={windArrowStyle}
                 />
               </div>
-              <div className="absolute bottom-4 left-4 right-4 rounded-2xl border border-white/20 bg-[#0a192f]/88 p-4 text-white shadow-soft backdrop-blur-xl sm:left-auto sm:w-72">
-                <p className="text-xs font-black uppercase text-teal-200">Vento Meteo Militare</p>
-                <p className="mt-2 text-2xl font-black">
+              <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-between gap-2 bg-[#0a192f]/90 px-4 py-3 text-white shadow-soft backdrop-blur-xl">
+                <p className="text-xs font-black uppercase text-teal-200 sm:text-sm">Vento Meteo Militare</p>
+                <p className="text-sm font-black sm:text-base">
                   {beachData.meteoWind.direction} · {beachData.meteoWind.intensity}
                 </p>
-                <p className="mt-1 text-sm font-bold text-white/80">Aggiornato alle {beachData.meteoWind.updatedAt}</p>
+                <p className="text-xs font-bold text-white/80 sm:text-sm">Aggiornato ogni ora · {beachData.meteoWind.updatedAt}</p>
                 <a
-                  className="mt-2 inline-block text-xs font-bold text-teal-200 underline decoration-teal-200/40 underline-offset-4"
+                  className="text-xs font-bold text-teal-200 underline decoration-teal-200/40 underline-offset-4"
                   href={beachData.meteoWind.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
