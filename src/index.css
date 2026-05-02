@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  color: #0a192f;
-  background: #f4fbfa;
+  color: #1f2933;
+  background: #fff8ed;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -21,9 +21,9 @@ body {
   min-height: 100vh;
   line-height: 1.6;
   background:
-    radial-gradient(circle at top left, rgba(14, 165, 233, 0.12), transparent 28rem),
-    radial-gradient(circle at 82% 18%, rgba(255, 140, 0, 0.1), transparent 24rem),
-    linear-gradient(180deg, #f8fbfa 0%, #eef8f7 100%);
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.78), transparent 28rem),
+    radial-gradient(circle at 82% 18%, rgba(255, 140, 0, 0.12), transparent 24rem),
+    linear-gradient(180deg, #fffaf3 0%, #f4eadc 100%);
 }
 
 button,
@@ -38,7 +38,7 @@ textarea {
   }
 
   .field-input {
-    @apply mt-2 min-h-[54px] w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg font-semibold text-beach-ink outline-none transition duration-300 focus:border-beach-reef focus:bg-white focus:ring-4 focus:ring-teal-100;
+    @apply mt-2 min-h-[54px] w-full rounded-2xl border border-stone-300 bg-white px-4 py-3 text-lg font-semibold text-beach-ink outline-none transition duration-300 focus:border-beach-reef focus:bg-white focus:ring-4 focus:ring-orange-100;
   }
 
   .premium-card {
@@ -46,7 +46,7 @@ textarea {
   }
 
   .premium-glass {
-    @apply rounded-2xl border border-white/20 bg-[#0a192f]/90 text-white shadow-[0_24px_70px_rgba(10,25,47,0.18)] backdrop-blur-xl;
+    @apply rounded-2xl border border-white/20 bg-[#1f2933]/90 text-white shadow-[0_24px_70px_rgba(31,41,51,0.2)] backdrop-blur-xl;
   }
 
   .premium-cta {
@@ -75,6 +75,74 @@ textarea {
 
   .today-hero-card {
     @apply rounded-2xl border border-white/95 bg-white/95 p-3 text-beach-ink shadow-[0_24px_70px_rgba(10,25,47,0.18)] backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:shadow-2xl sm:p-5;
+  }
+}
+
+.wind-title {
+  position: relative;
+  display: inline-block;
+  background: linear-gradient(100deg, #1f2933 0%, #62707a 54%, #9aa3a8 100%);
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 3px 0 rgba(255, 255, 255, 0.38);
+}
+
+.wind-title::before,
+.wind-title::after {
+  position: absolute;
+  right: 0;
+  height: 0.12em;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent 0%, rgba(90, 99, 105, 0.68) 48%, transparent 100%);
+  content: "";
+  pointer-events: none;
+}
+
+.wind-title::before {
+  top: 0.2em;
+  width: clamp(2.6rem, 10vw, 6.5rem);
+  animation: wind-breath-top 5.8s ease-in-out infinite;
+}
+
+.wind-title::after {
+  bottom: 0.16em;
+  width: clamp(1.8rem, 7vw, 4.4rem);
+  animation: wind-breath-bottom 6.4s ease-in-out infinite;
+}
+
+@keyframes wind-breath-top {
+  0%,
+  100% {
+    opacity: 0.34;
+    transform: translateX(38%) rotate(-3deg) scaleX(0.86);
+  }
+
+  50% {
+    opacity: 0.62;
+    transform: translateX(54%) rotate(-3deg) scaleX(1);
+  }
+}
+
+@keyframes wind-breath-bottom {
+  0%,
+  100% {
+    opacity: 0.24;
+    transform: translateX(24%) rotate(-2deg) scaleX(0.82);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: translateX(40%) rotate(-2deg) scaleX(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .wind-title::before {
+    transform-origin: right center;
+  }
+
+  .wind-title::after {
+    transform-origin: right center;
   }
 }
 
@@ -118,7 +186,7 @@ textarea {
   top: 50%;
   left: 50%;
   z-index: 1;
-  color: #0a192f;
+  color: #1f2933;
   font-size: 0.72rem;
   font-weight: 900;
   line-height: 1;

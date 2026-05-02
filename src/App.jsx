@@ -26,14 +26,14 @@ const statusStyles = {
   "green-plus": {
     label: "Verde +",
     summary: "Ottima scelta",
-    className: "border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-950",
-    dotClassName: "bg-gradient-to-br from-emerald-300 to-emerald-500",
+    className: "border-[#bac88f] bg-gradient-to-r from-[#fffdf2] to-[#f3f0df] text-[#26301e]",
+    dotClassName: "bg-gradient-to-br from-[#a8c46e] to-[#5f8f42]",
   },
   "green-minus": {
     label: "Verde -",
     summary: "Buona alternativa",
-    className: "border-teal-200 bg-gradient-to-r from-teal-50 to-emerald-50 text-teal-950",
-    dotClassName: "bg-gradient-to-br from-teal-300 to-emerald-500",
+    className: "border-[#c5cca4] bg-gradient-to-r from-[#fffdf2] to-[#f6f1e2] text-[#303420]",
+    dotClassName: "bg-gradient-to-br from-[#b5c77d] to-[#71844c]",
   },
   "red-minus": {
     label: "Rosso -",
@@ -50,9 +50,9 @@ const statusStyles = {
 };
 
 const iconToneClasses = {
-  navy: "bg-[#0a192f] text-white",
+  navy: "bg-[#1f2933] text-white",
   orange: "bg-[#ff8c00] text-white",
-  green: "bg-gradient-to-br from-emerald-400 to-emerald-600 text-white",
+  green: "bg-gradient-to-br from-[#d8b06a] to-[#9a6a2e] text-white",
   coral: "bg-gradient-to-br from-[#ff8c00] to-[#ef4f5e] text-white",
 };
 
@@ -208,12 +208,12 @@ function resizePhotoForStorage(file) {
 function LogoMark({ className = "" }) {
   return (
     <svg className={className} viewBox="0 0 96 96" aria-hidden="true">
-      <path d="M48 32v42" fill="none" stroke="#0a192f" strokeLinecap="round" strokeWidth="5" />
+      <path d="M48 32v42" fill="none" stroke="#1f2933" strokeLinecap="round" strokeWidth="5" />
       <path d="M16 39c7-16 19-24 32-24s25 8 32 24H16Z" fill="#ff8c00" />
       <path d="M16 39c8-6 16-6 24 0 5-6 11-6 16 0 8-6 16-6 24 0" fill="#d66f00" opacity="0.72" />
-      <path d="M16 39c7-16 19-24 32-24s25 8 32 24" fill="none" stroke="#0a192f" strokeLinecap="round" strokeWidth="4" />
-      <path d="M48 15c-6 7-9 15-8 24M48 15c6 7 9 15 8 24" fill="none" stroke="#0a192f" strokeLinecap="round" strokeWidth="3.5" />
-      <path d="M48 74c0 7 7 10 13 5" fill="none" stroke="#0a192f" strokeLinecap="round" strokeWidth="5" />
+      <path d="M16 39c7-16 19-24 32-24s25 8 32 24" fill="none" stroke="#1f2933" strokeLinecap="round" strokeWidth="4" />
+      <path d="M48 15c-6 7-9 15-8 24M48 15c6 7 9 15 8 24" fill="none" stroke="#1f2933" strokeLinecap="round" strokeWidth="3.5" />
+      <path d="M48 74c0 7 7 10 13 5" fill="none" stroke="#1f2933" strokeLinecap="round" strokeWidth="5" />
     </svg>
   );
 }
@@ -257,15 +257,15 @@ function IconHeart({ className = "" }) {
 
 function WaveDivider() {
   return (
-    <div className="-mt-px bg-[#e9f7fb]" aria-hidden="true">
+    <div className="-mt-px bg-[#fff4e5]" aria-hidden="true">
       <svg className="block h-16 w-full sm:h-24" viewBox="0 0 1440 140" preserveAspectRatio="none">
         <path
           d="M0 74 60 66.3C120 58.7 240 43.3 360 48.5 480 53.7 600 79.3 720 85.8 840 92.3 960 79.7 1080 65.2 1200 50.7 1320 34.3 1380 26.2L1440 18v122H0V74Z"
-          fill="#dff3f8"
+          fill="#efe1cf"
         />
         <path
           d="M0 98 80 91.8C160 85.7 320 73.3 480 78.2 640 83 800 105 960 100.3 1120 95.7 1280 64.3 1360 48.7L1440 33v107H0V98Z"
-          fill="#f8fbfa"
+          fill="#fff8ed"
           opacity="0.82"
         />
       </svg>
@@ -279,7 +279,7 @@ function TodayConditionsCard({ beachData, currentStatus, quickWhatsAppUrl, t }) 
   return (
     <aside className="today-hero-card">
       <div className="grid grid-cols-[86px_minmax(0,1fr)] gap-3 sm:grid-cols-[0.42fr_0.58fr] sm:gap-4 lg:block">
-        <div className="relative overflow-hidden rounded-2xl bg-[#dff3f8]">
+        <div className="relative overflow-hidden rounded-2xl bg-[#efe1cf]">
           <img
             className="aspect-square h-full w-full object-cover sm:aspect-[4/3] lg:aspect-[16/9]"
             src={beachData.dailySeaPhoto}
@@ -304,7 +304,7 @@ function TodayConditionsCard({ beachData, currentStatus, quickWhatsAppUrl, t }) 
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:gap-3">
-              <div className="rounded-2xl bg-[#0a192f] p-2 text-white sm:p-3">
+              <div className="rounded-2xl bg-[#1f2933] p-2 text-white sm:p-3">
                 <p className="text-[0.65rem] font-black uppercase text-white/80 sm:text-xs">{t.todayCard.wind}</p>
                 <p className="mt-1 text-lg font-black sm:text-xl">{beachData.meteoWind.direction}</p>
                 <p className="text-xs font-bold text-white/80 sm:text-sm">{beachData.meteoWind.intensity}</p>
@@ -315,8 +315,8 @@ function TodayConditionsCard({ beachData, currentStatus, quickWhatsAppUrl, t }) 
               </div>
             </div>
 
-            <div className="mt-2 rounded-2xl border border-sky-100 bg-sky-50 p-2">
-              <p className="text-[0.65rem] font-black uppercase text-sky-900 sm:text-xs">{t.todayCard.availability}</p>
+            <div className="mt-2 rounded-2xl border border-[#ecd9bf] bg-[#fff7eb] p-2">
+              <p className="text-[0.65rem] font-black uppercase text-[#7a4d18] sm:text-xs">{t.todayCard.availability}</p>
               <p className="mt-1 text-xs font-black leading-4 text-beach-ink sm:text-sm">{availabilityText}</p>
               <p className="mt-1 text-xs font-bold leading-4 text-slate-800 sm:text-sm">{beachData.availability.note}</p>
             </div>
@@ -330,7 +330,7 @@ function TodayConditionsCard({ beachData, currentStatus, quickWhatsAppUrl, t }) 
           </div>
 
           <a
-            className="premium-cta mt-3 min-h-[48px] w-full bg-[#25D366] px-3 text-sm shadow-[0_18px_38px_rgba(37,211,102,0.28)] hover:bg-[#1fb759] sm:mt-4 sm:min-h-[56px] sm:text-lg"
+            className="premium-cta mt-3 min-h-[48px] w-full px-3 text-sm sm:mt-4 sm:min-h-[56px] sm:text-lg"
             href={quickWhatsAppUrl}
             target="_blank"
             rel="noreferrer"
@@ -606,7 +606,7 @@ function App() {
         aria-label={isMusicPlaying ? "Ferma la musica" : "Avvia la musica"}
         aria-pressed={isMusicPlaying}
         className={`inline-flex min-h-[50px] items-center justify-center gap-2 rounded-2xl border border-white/80 px-4 py-2 text-sm font-black text-white shadow-soft backdrop-blur transition duration-300 hover:-translate-y-0.5 ${
-          isMusicPlaying ? "bg-[#0a192f]" : "bg-[#0a192f]/88"
+          isMusicPlaying ? "bg-[#1f2933]" : "bg-[#1f2933]/88"
         } ${extraClassName}`}
         type="button"
         onClick={toggleSoundtrack}
@@ -627,7 +627,7 @@ function App() {
         {renderMusicButton(buttonClassName)}
         <select
           aria-label="Scegli colonna sonora"
-          className={`min-h-[50px] rounded-2xl border border-white/80 bg-white/90 px-3 py-2 text-sm font-black text-beach-ink shadow-soft backdrop-blur outline-none transition duration-300 hover:-translate-y-0.5 focus:ring-4 focus:ring-sky-100 ${selectClassName}`}
+          className={`min-h-[50px] rounded-2xl border border-white/80 bg-white/90 px-3 py-2 text-sm font-black text-beach-ink shadow-soft backdrop-blur outline-none transition duration-300 hover:-translate-y-0.5 focus:ring-4 focus:ring-orange-100 ${selectClassName}`}
           value={activeTrackIndex}
           onChange={changeSoundtrack}
         >
@@ -651,7 +651,7 @@ function App() {
         onPause={() => setIsMusicPlaying(false)}
         onPlay={() => setIsMusicPlaying(true)}
       />
-      <header className="relative overflow-hidden bg-[#e9f7fb] text-beach-ink">
+      <header className="relative overflow-hidden bg-[#fff4e5] text-beach-ink">
         <img
           className="absolute inset-0 h-full w-full object-cover"
           src={beachData.heroImage}
@@ -661,7 +661,7 @@ function App() {
           decoding="async"
           fetchPriority="high"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-sky-100/40 via-sky-200/10 to-beach-foam/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#fff5e4]/55 via-[#fff8ed]/12 to-beach-foam/92" />
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-beach-foam via-beach-foam/80 to-transparent" />
 
         <nav className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
@@ -694,13 +694,13 @@ function App() {
               <p className="text-[0.65rem] font-black uppercase text-beach-ink/80 sm:text-xs">{t.hero.location}</p>
             </div>
 
-            <h1 className="mx-auto mt-4 max-w-3xl text-4xl font-black uppercase leading-none text-beach-ink drop-shadow-[0_3px_0_rgba(255,255,255,0.45)] sm:text-5xl md:text-6xl lg:mx-0 lg:text-[4.8rem]">
+            <h1 className="wind-title mx-auto mt-4 max-w-3xl text-3xl font-black uppercase leading-none sm:text-4xl md:text-5xl lg:mx-0 lg:text-[3.65rem] xl:text-[4rem]">
               {t.hero.title}
             </h1>
             <p className="mx-auto mt-2 max-w-2xl text-2xl font-black italic leading-none text-[#e96400] drop-shadow-[0_2px_0_rgba(255,255,255,0.42)] sm:text-4xl md:text-5xl lg:mx-0">
               {t.hero.payoff}
             </p>
-            <p className="mx-auto mt-4 inline-flex max-w-2xl items-center justify-center rounded-2xl bg-[#0a192f] px-4 py-2.5 text-sm font-black uppercase leading-tight text-white shadow-[0_16px_34px_rgba(10,25,47,0.22)] sm:px-6 sm:text-lg md:text-xl lg:mx-0">
+            <p className="mx-auto mt-4 inline-flex max-w-2xl items-center justify-center rounded-2xl bg-[#1f2933] px-4 py-2.5 text-sm font-black uppercase leading-tight text-white shadow-[0_16px_34px_rgba(31,41,51,0.22)] sm:px-6 sm:text-lg md:text-xl lg:mx-0">
               {t.hero.subtitle}
             </p>
 
@@ -843,7 +843,7 @@ function App() {
               </div>
 
               <button
-                className="premium-cta mt-5 w-full bg-[#25D366] shadow-[0_14px_30px_rgba(37,211,102,0.25)] hover:bg-[#1fb759] hover:shadow-[0_18px_42px_rgba(37,211,102,0.35)]"
+                className="premium-cta mt-5 w-full"
                 type="submit"
               >
                 Invia richiesta WhatsApp
@@ -852,7 +852,7 @@ function App() {
           </div>
         </section>
 
-        <section className="bg-[#dff3f8] py-12 sm:py-16">
+        <section className="bg-[#f2e7d8] py-12 sm:py-16">
           <div className="mx-auto grid max-w-6xl gap-6 px-5 sm:px-8 lg:grid-cols-[1fr_0.82fr] lg:items-start">
             <div>
               <p className="section-kicker">{t.howItWorks.kicker}</p>
@@ -863,7 +863,7 @@ function App() {
               {t.howItWorks.steps.map((step, index) => (
                 <article className="rounded-2xl border border-white/90 bg-white/95 p-4 shadow-soft" key={step.title}>
                   <div className="flex gap-4">
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#0a192f] text-lg font-black text-white">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#1f2933] text-lg font-black text-white">
                       {index + 1}
                     </span>
                     <div>
@@ -883,7 +883,7 @@ function App() {
           </div>
         </section>
 
-        <section id="condizioni" className="bg-[#eef8f7] py-12 sm:py-16">
+        <section id="condizioni" className="bg-[#fff6e8] py-12 sm:py-16">
           <div className="mx-auto max-w-6xl px-5 sm:px-8">
             <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -914,13 +914,13 @@ function App() {
               </article>
 
               <aside className="premium-glass p-5 sm:p-6">
-                <p className="text-sm font-black uppercase text-teal-200">Vento Meteo Militare</p>
+                <p className="text-sm font-black uppercase text-orange-200">Vento Meteo Militare</p>
                 <h3 className="mt-3 text-4xl font-black leading-tight text-white">
                   {beachData.meteoWind.direction} · {beachData.meteoWind.intensity}
                 </h3>
                 <p className="mt-2 text-sm font-bold text-white/80">Aggiornato alle {beachData.meteoWind.updatedAt}</p>
                 <a
-                  className="mt-3 inline-block text-sm font-bold text-teal-200 underline decoration-teal-200/40 underline-offset-4"
+                  className="mt-3 inline-block text-sm font-bold text-orange-200 underline decoration-orange-200/40 underline-offset-4"
                   href={beachData.meteoWind.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
@@ -958,7 +958,7 @@ function App() {
               <h2 className="section-title">{t.windMap.title}</h2>
               <div className="mt-5 space-y-3 text-lg font-bold leading-8 text-slate-800">
                 <p>
-                  <strong className="text-emerald-700">{t.windMap.greenLabel}</strong> = {t.windMap.greenMeaning}
+                  <strong className="text-[#5f8f42]">{t.windMap.greenLabel}</strong> = {t.windMap.greenMeaning}
                 </p>
                 <p>
                   <strong className="text-red-700">{t.windMap.redLabel}</strong> = {t.windMap.redMeaning}
@@ -966,7 +966,7 @@ function App() {
               </div>
             </div>
 
-            <div className="premium-card relative overflow-hidden bg-[#0a192f]">
+            <div className="premium-card relative overflow-hidden bg-[#1f2933]">
               <img
                 className="aspect-[4/3] w-full object-cover"
                 src={beachData.windMapImage}
@@ -976,7 +976,7 @@ function App() {
                 loading="lazy"
                 decoding="async"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-[#0a192f]/0 via-transparent to-[#0a192f]/58" />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#1f2933]/0 via-transparent to-[#1f2933]/58" />
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center" data-wind-direction={beachData.meteoWind.direction}>
                 <div
                   aria-label={`Direzione vento ${beachData.meteoWind.direction}`}
@@ -986,14 +986,14 @@ function App() {
                   <span>{beachData.meteoWind.direction}</span>
                 </div>
               </div>
-              <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-between gap-2 bg-[#0a192f]/90 px-4 py-3 text-white shadow-soft backdrop-blur-xl">
-                <p className="text-xs font-black uppercase text-teal-200 sm:text-sm">Vento Meteo Militare</p>
+              <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-between gap-2 bg-[#1f2933]/90 px-4 py-3 text-white shadow-soft backdrop-blur-xl">
+                <p className="text-xs font-black uppercase text-orange-200 sm:text-sm">Vento Meteo Militare</p>
                 <p className="text-sm font-black sm:text-base">
                   {beachData.meteoWind.direction} · {beachData.meteoWind.intensity}
                 </p>
                 <p className="text-xs font-bold text-white/80 sm:text-sm">Aggiornato ogni ora · {beachData.meteoWind.updatedAt}</p>
                 <a
-                  className="text-xs font-bold text-teal-200 underline decoration-teal-200/40 underline-offset-4"
+                  className="text-xs font-bold text-orange-200 underline decoration-orange-200/40 underline-offset-4"
                   href={beachData.meteoWind.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
@@ -1005,7 +1005,7 @@ function App() {
           </div>
         </section>
 
-        <section id="dove-siamo" className="bg-[#eef8f7] py-12 sm:py-16">
+        <section id="dove-siamo" className="bg-[#fff6e8] py-12 sm:py-16">
           <div className="mx-auto grid max-w-6xl gap-6 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
             <div>
               <p className="section-kicker">Marina di Campo</p>
@@ -1028,7 +1028,7 @@ function App() {
                 referrerPolicy="no-referrer-when-downgrade"
               />
               <a
-                className="premium-cta mt-4 w-full bg-[#0a6fa3] text-center shadow-[0_16px_36px_rgba(10,111,163,0.24)] hover:bg-[#085f8c]"
+                className="premium-cta mt-4 w-full text-center"
                 href={GOOGLE_MAP_DIRECTIONS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -1040,14 +1040,14 @@ function App() {
         </section>
 
         {showMorningAdmin ? (
-          <section id="aggiorna" className="bg-[#e3f5f2] py-12 sm:py-16">
+          <section id="aggiorna" className="bg-[#f2e7d8] py-12 sm:py-16">
             <div className="mx-auto max-w-6xl px-5 sm:px-8">
               <details className="premium-card" open>
                 <summary className="cursor-pointer list-none px-5 py-5 text-xl font-black text-beach-ink sm:px-6">
                   Area gestione mattina
                 </summary>
 
-                <form className="grid gap-6 border-t border-teal-900/10 p-5 sm:p-6 lg:grid-cols-[0.9fr_1.1fr]" onSubmit={saveMorningUpdate}>
+                <form className="grid gap-6 border-t border-stone-900/10 p-5 sm:p-6 lg:grid-cols-[0.9fr_1.1fr]" onSubmit={saveMorningUpdate}>
                   <div>
                     <img
                       className="aspect-[4/3] w-full rounded-2xl object-cover"
@@ -1062,7 +1062,7 @@ function App() {
                     <label className="mt-4 block">
                       <span className="field-label">Foto spiaggia di oggi</span>
                       <input
-                        className="mt-2 min-h-[50px] w-full rounded-2xl border border-teal-900/15 bg-white/90 px-4 py-3 text-sm text-beach-ink file:mr-4 file:rounded-2xl file:border-0 file:bg-beach-reef file:px-4 file:py-2 file:font-bold file:text-white"
+                        className="mt-2 min-h-[50px] w-full rounded-2xl border border-stone-900/15 bg-white/90 px-4 py-3 text-sm text-beach-ink file:mr-4 file:rounded-2xl file:border-0 file:bg-beach-reef file:px-4 file:py-2 file:font-bold file:text-white"
                         type="file"
                         accept="image/*"
                         onChange={updateMorningPhoto}
@@ -1214,13 +1214,13 @@ function App() {
 
                     <div className="flex flex-col gap-3 sm:col-span-2 sm:flex-row">
                       <button
-                        className="premium-cta bg-beach-reef shadow-[0_14px_30px_rgba(15,118,110,0.22)] hover:bg-teal-800 hover:shadow-[0_18px_42px_rgba(15,118,110,0.32)]"
+                        className="premium-cta bg-beach-reef shadow-[0_14px_30px_rgba(154,106,46,0.24)] hover:bg-[#7a4d18] hover:shadow-[0_18px_42px_rgba(154,106,46,0.34)]"
                         type="submit"
                       >
                         Salva aggiornamento
                       </button>
                       <button
-                        className="inline-flex min-h-[50px] items-center justify-center rounded-2xl border border-teal-900/20 bg-white px-5 py-3 text-base font-black text-beach-ink transition duration-300 hover:-translate-y-0.5 hover:bg-slate-50"
+                        className="inline-flex min-h-[50px] items-center justify-center rounded-2xl border border-stone-900/20 bg-white px-5 py-3 text-base font-black text-beach-ink transition duration-300 hover:-translate-y-0.5 hover:bg-stone-50"
                         type="button"
                         onClick={resetMorningUpdate}
                       >
@@ -1237,13 +1237,13 @@ function App() {
         ) : null}
       </main>
 
-      <footer className="bg-[#0a192f] px-5 py-8 text-center text-sm font-semibold text-white/80 sm:px-8">
+      <footer className="bg-[#1f2933] px-5 py-8 text-center text-sm font-semibold text-white/80 sm:px-8">
         <p className="text-lg font-black uppercase text-[#ff8c00]">Noleggio Numero 5</p>
         <p className="mt-1">Marina di Campo · Prenota su WhatsApp {whatsappDisplay}</p>
       </footer>
 
       <div className="fixed bottom-[5.6rem] right-4 z-50 sm:hidden">
-        {renderSoundtrackControl("flex-col items-end", "bg-[#0a192f]", "w-[7.75rem]")}
+        {renderSoundtrackControl("flex-col items-end", "bg-[#1f2933]", "w-[7.75rem]")}
         {musicMessage ? (
           <p className="mt-2 max-w-[12rem] rounded-xl bg-white/95 px-3 py-2 text-xs font-black text-beach-ink shadow-soft">
             {musicMessage}
@@ -1252,7 +1252,7 @@ function App() {
       </div>
 
       <a
-        className="fixed bottom-4 left-4 right-4 z-50 inline-flex min-h-[58px] items-center justify-center rounded-2xl bg-[#25D366] px-5 py-3 text-lg font-black text-white shadow-[0_20px_48px_rgba(10,25,47,0.28)] sm:hidden"
+        className="fixed bottom-4 left-4 right-4 z-50 inline-flex min-h-[58px] items-center justify-center rounded-2xl bg-[#ff8c00] px-5 py-3 text-lg font-black text-white shadow-[0_20px_48px_rgba(31,41,51,0.28)] sm:hidden"
         href={quickWhatsAppUrl}
         target="_blank"
         rel="noreferrer"

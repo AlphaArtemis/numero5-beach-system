@@ -36,7 +36,7 @@ export const translations = {
     },
     howItWorks: {
       kicker: "Come funziona",
-      title: "Dalla scansione al lettino",
+      title: "Dalla scansione alla battigia",
       steps: [
         {
           title: "Guarda il mare",
@@ -110,7 +110,7 @@ export const translations = {
     },
     howItWorks: {
       kicker: "How it works",
-      title: "From scan to sunbed",
+      title: "From scan to shoreline",
       steps: [
         {
           title: "Check the sea",
@@ -184,7 +184,7 @@ export const translations = {
     },
     howItWorks: {
       kicker: "So funktioniert es",
-      title: "Vom Scan zur Liege",
+      title: "Vom Scan zur Wasserlinie",
       steps: [
         {
           title: "Meer ansehen",

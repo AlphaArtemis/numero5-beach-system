@@ -5,16 +5,16 @@ export default {
     extend: {
       colors: {
         beach: {
-          ink: "#0a192f",
-          reef: "#0f766e",
-          water: "#e5f7f5",
+          ink: "#1f2933",
+          reef: "#9a6a2e",
+          water: "#f1e6d6",
           sun: "#ff8c00",
-          coral: "#ef6f61",
-          foam: "#f8fbfa",
+          coral: "#e66b3d",
+          foam: "#fff8ed",
         },
       },
       boxShadow: {
-        soft: "0 16px 40px rgba(23, 51, 52, 0.10)",
+        soft: "0 16px 40px rgba(69, 49, 25, 0.12)",
       },
       fontFamily: {
         sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
