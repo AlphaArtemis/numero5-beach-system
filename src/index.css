@@ -113,6 +113,20 @@ textarea {
   filter: blur(10px);
 }
 
+.wind-arrow span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  color: #0a192f;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.48);
+  transform: translate(-50%, -50%) rotate(calc(-1 * var(--wind-arrow-rotation, 0deg)));
+}
+
 @media (min-width: 768px) {
   .wind-arrow {
     width: 26px;
@@ -124,5 +138,9 @@ textarea {
     border-right-width: 35px;
     border-bottom-width: 50px;
     border-left-width: 35px;
+  }
+
+  .wind-arrow span {
+    font-size: 0.8rem;
   }
 }

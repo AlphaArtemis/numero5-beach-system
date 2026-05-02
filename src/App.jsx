@@ -94,7 +94,7 @@ function getWindRotation(direction = "") {
     .trim()
     .toUpperCase()
     .replace(/\s+/g, "")
-    .replace("-", "");
+    .replace(/[.-]/g, "");
 
   const directionAngles = {
     N: 0,
@@ -371,6 +371,7 @@ function App() {
   const quickWhatsAppUrl = `https://wa.me/${normalizeWhatsAppNumber(beachData.whatsappNumber)}?text=${quickWhatsAppText}`;
   const windArrowStyle = {
     transform: `rotate(${windRotation}deg)`,
+    "--wind-arrow-rotation": `${windRotation}deg`,
     "--wind-arrow-from": isGreenStatus ? "#34d399" : "#ff8c00",
     "--wind-arrow-to": isGreenStatus ? "#0f766e" : "#ef4f5e",
   };
@@ -978,10 +979,12 @@ function App() {
               <div className="absolute inset-0 bg-gradient-to-b from-[#0a192f]/0 via-transparent to-[#0a192f]/58" />
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center" data-wind-direction={beachData.meteoWind.direction}>
                 <div
-                  aria-hidden="true"
+                  aria-label={`Direzione vento ${beachData.meteoWind.direction}`}
                   className="wind-arrow"
                   style={windArrowStyle}
-                />
+                >
+                  <span>{beachData.meteoWind.direction}</span>
+                </div>
               </div>
               <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-between gap-2 bg-[#0a192f]/90 px-4 py-3 text-white shadow-soft backdrop-blur-xl">
                 <p className="text-xs font-black uppercase text-teal-200 sm:text-sm">Vento Meteo Militare</p>
