@@ -208,11 +208,12 @@ function resizePhotoForStorage(file) {
 function LogoMark({ className = "" }) {
   return (
     <svg className={className} viewBox="0 0 96 96" aria-hidden="true">
-      <path d="M48 12v50" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="4" />
-      <path d="M45 18c-13 10-22 24-25 42h25V18Z" fill="currentColor" opacity="0.95" />
-      <path d="M53 24c11 8 18 20 21 36H53V24Z" fill="currentColor" opacity="0.68" />
-      <path d="M25 73c8 5 15 5 23 0 8 5 15 5 23 0" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="5" />
-      <path d="M50 10h18l-5 6 5 6H50V10Z" fill="#ff8c00" />
+      <path d="M48 32v42" fill="none" stroke="#0a192f" strokeLinecap="round" strokeWidth="5" />
+      <path d="M16 39c7-16 19-24 32-24s25 8 32 24H16Z" fill="#ff8c00" />
+      <path d="M16 39c8-6 16-6 24 0 5-6 11-6 16 0 8-6 16-6 24 0" fill="#d66f00" opacity="0.72" />
+      <path d="M16 39c7-16 19-24 32-24s25 8 32 24" fill="none" stroke="#0a192f" strokeLinecap="round" strokeWidth="4" />
+      <path d="M48 15c-6 7-9 15-8 24M48 15c6 7 9 15 8 24" fill="none" stroke="#0a192f" strokeLinecap="round" strokeWidth="3.5" />
+      <path d="M48 74c0 7 7 10 13 5" fill="none" stroke="#0a192f" strokeLinecap="round" strokeWidth="5" />
     </svg>
   );
 }
@@ -659,17 +660,17 @@ function App() {
           decoding="async"
           fetchPriority="high"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/30 to-beach-foam/95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-100/40 via-sky-200/10 to-beach-foam/90" />
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-beach-foam via-beach-foam/80 to-transparent" />
 
         <nav className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-          <a className="flex min-h-[50px] items-center gap-3 text-beach-ink" href="#top" aria-label="Numero 5 Beach System">
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/80 text-beach-ink shadow-soft backdrop-blur">
-              <LogoMark className="h-9 w-9" />
+          <a className="flex min-h-[50px] items-center gap-3 text-beach-ink" href="#top" aria-label="Noleggio Numero 5">
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/90 text-beach-ink shadow-soft backdrop-blur">
+              <LogoMark className="h-10 w-10" />
             </span>
             <span className="leading-tight">
-              <span className="block text-sm font-black uppercase">Numero 5</span>
-              <span className="block text-xs font-bold uppercase text-beach-ink/70">Marina di Campo</span>
+              <span className="block text-sm font-black uppercase">Noleggio</span>
+              <span className="block text-xs font-black uppercase text-beach-ink/75">Numero 5</span>
             </span>
           </a>
 
@@ -684,15 +685,21 @@ function App() {
           </div>
         </nav>
 
-        <section id="top" className="relative z-10 mx-auto grid max-w-6xl gap-6 px-5 pb-12 pt-4 sm:px-8 sm:pb-16 md:pt-8 lg:min-h-[74svh] lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
-          <div>
-            <p className="inline-flex w-fit rounded-full border border-white/80 bg-white/90 px-4 py-2 text-sm font-black uppercase text-beach-ink shadow-soft backdrop-blur">
-              {t.hero.location}
-            </p>
-            <h1 className="mt-5 max-w-3xl text-4xl font-black leading-none text-beach-ink sm:text-6xl md:text-7xl lg:text-[4.2rem]">
+        <section id="top" className="relative z-10 mx-auto grid max-w-6xl gap-6 px-5 pb-12 pt-4 sm:px-8 sm:pb-16 md:pt-8 lg:min-h-[74svh] lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+          <div className="text-center lg:text-left">
+            <div className="mx-auto flex w-fit flex-col items-center text-beach-ink lg:mx-0">
+              <LogoMark className="h-16 w-16 drop-shadow-[0_10px_18px_rgba(10,25,47,0.18)] sm:h-20 sm:w-20" />
+              <p className="mt-1 text-sm font-black uppercase leading-tight sm:text-base">Noleggio Numero 5</p>
+              <p className="text-xs font-black uppercase text-beach-ink/80 sm:text-sm">{t.hero.location}</p>
+            </div>
+
+            <h1 className="mx-auto mt-6 max-w-4xl text-5xl font-black uppercase leading-none text-beach-ink drop-shadow-[0_3px_0_rgba(255,255,255,0.45)] sm:text-7xl md:text-8xl lg:mx-0 lg:text-[6.4rem]">
               {t.hero.title}
             </h1>
-            <p className="mt-4 max-w-2xl text-xl font-black leading-tight text-beach-ink sm:text-3xl">
+            <p className="mx-auto mt-3 max-w-3xl text-4xl font-black italic leading-none text-[#e96400] drop-shadow-[0_2px_0_rgba(255,255,255,0.42)] sm:text-6xl lg:mx-0">
+              {t.hero.payoff}
+            </p>
+            <p className="mx-auto mt-5 inline-flex max-w-3xl items-center justify-center rounded-2xl bg-[#0a192f] px-5 py-3 text-base font-black uppercase leading-tight text-white shadow-[0_16px_34px_rgba(10,25,47,0.22)] sm:px-8 sm:text-2xl lg:mx-0">
               {t.hero.subtitle}
             </p>
 
@@ -700,14 +707,11 @@ function App() {
               <TodayConditionsCard beachData={beachData} currentStatus={currentStatus} quickWhatsAppUrl={quickWhatsAppUrl} t={t} />
             </div>
 
-            <p className="mt-3 max-w-xl text-xl font-black italic text-[#d66f00] sm:text-2xl">
-              {t.hero.payoff}
-            </p>
-            <p className="mt-4 max-w-xl text-lg font-bold leading-8 text-slate-900">
+            <p className="mx-auto mt-4 max-w-xl text-lg font-bold leading-8 text-slate-900 lg:mx-0">
               {t.hero.body}
             </p>
 
-            <div className="mt-7 flex flex-wrap gap-3">
+            <div className="mt-7 flex flex-wrap justify-center gap-3 lg:justify-start">
               <a className="premium-cta" href="#prenota">
                 {t.hero.primaryCta}
               </a>
@@ -1010,7 +1014,7 @@ function App() {
 
             <div className="premium-card overflow-hidden p-3 sm:p-4">
               <iframe
-                title="Dove siamo - Numero 5 Beach System"
+                title="Dove siamo - Noleggio Numero 5"
                 src={GOOGLE_MAP_EMBED_URL}
                 width="100%"
                 height="280"
@@ -1231,7 +1235,7 @@ function App() {
       </main>
 
       <footer className="bg-[#0a192f] px-5 py-8 text-center text-sm font-semibold text-white/80 sm:px-8">
-        <p className="text-lg font-black text-[#ff8c00]">Numero 5 Beach System</p>
+        <p className="text-lg font-black uppercase text-[#ff8c00]">Noleggio Numero 5</p>
         <p className="mt-1">Marina di Campo · Prenota su WhatsApp {whatsappDisplay}</p>
       </footer>
 
