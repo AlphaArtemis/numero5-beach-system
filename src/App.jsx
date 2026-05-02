@@ -1240,6 +1240,9 @@ function App() {
       <footer className="bg-[#1f2933] px-5 py-8 text-center text-sm font-semibold text-white/80 sm:px-8">
         <p className="text-lg font-black uppercase text-[#ff8c00]">Noleggio Numero 5</p>
         <p className="mt-1">Marina di Campo · Prenota su WhatsApp {whatsappDisplay}</p>
+        <p className="mx-auto mt-4 max-w-xl text-xs font-bold text-white/50 sm:text-sm">
+          La tecnologia conta quando aumenta la cura.
+        </p>
       </footer>
 
       <div className="fixed bottom-[5.6rem] right-4 z-50 sm:hidden">
