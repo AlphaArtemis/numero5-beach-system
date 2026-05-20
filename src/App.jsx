@@ -729,33 +729,7 @@ function App() {
 
   function requestPhotoSelection() {
     setIsPhotoManagerOpen(true);
-
-    if (!isAdminAuthenticated) {
-      setPhotoUploadMessage("Accesso admin richiesto");
-      return;
-    }
-
     photoInputRef.current?.click();
-  }
-
-  async function handleAdminLogin(event) {
-    event.preventDefault();
-    setIsAdminVerifying(true);
-    setPhotoUploadMessage("");
-
-    try {
-      await verifyAdminPin(adminPinInput);
-      setAdminPin(adminPinInput);
-      setIsAdminAuthenticated(true);
-      window.localStorage.setItem(ADMIN_SESSION_KEY, "true");
-      window.localStorage.setItem(ADMIN_PIN_KEY, adminPinInput);
-      setPhotoUploadMessage("Accesso admin attivo");
-      photoInputRef.current?.click();
-    } catch (error) {
-      setPhotoUploadMessage(error.message || "Accesso admin richiesto");
-    } finally {
-      setIsAdminVerifying(false);
-    }
   }
 
   async function handlePhotoFileChange(event) {
@@ -784,16 +758,32 @@ function App() {
   }
 
   async function confirmPhotoUpload() {
-    if (!pendingPhoto || !adminPin) return;
+    if (!pendingPhoto) return;
 
     setPhotoUploadState("uploading");
     setPhotoUploadMessage("Caricamento in corso...");
 
     try {
+      let effectivePin = adminPin;
+
+      if (!effectivePin) {
+        if (!adminPinInput.trim()) {
+          throw new Error("Inserisci il PIN admin prima della conferma.");
+        }
+
+        setIsAdminVerifying(true);
+        await verifyAdminPin(adminPinInput.trim());
+        effectivePin = adminPinInput.trim();
+        setAdminPin(effectivePin);
+        setIsAdminAuthenticated(true);
+        window.localStorage.setItem(ADMIN_SESSION_KEY, "true");
+        window.localStorage.setItem(ADMIN_PIN_KEY, effectivePin);
+      }
+
       const result = await uploadPhotoOfTheDay({
         blob: pendingPhoto.blob,
         fileName: pendingPhoto.fileName,
-        pin: adminPin,
+        pin: effectivePin,
       });
 
       setPhotoOfDayUrl(result.url);
@@ -805,6 +795,8 @@ function App() {
     } catch (error) {
       setPhotoUploadState("error");
       setPhotoUploadMessage(error.message || "Errore durante il caricamento");
+    } finally {
+      setIsAdminVerifying(false);
     }
   }
 
@@ -1327,79 +1319,66 @@ function App() {
 
                     {isPhotoManagerOpen ? (
                       <div className="mt-4 space-y-4">
-                        {!isAdminAuthenticated ? (
-                          <form className="space-y-3" onSubmit={handleAdminLogin}>
-                            <label className="block">
-                              <span className="field-label">PIN admin</span>
-                              <input
-                                className="field-input"
-                                type="password"
-                                inputMode="numeric"
-                                value={adminPinInput}
-                                onChange={(event) => setAdminPinInput(event.target.value)}
-                                placeholder="Inserisci il PIN"
-                                required
+                        <input
+                          ref={photoInputRef}
+                          className="hidden"
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={handlePhotoFileChange}
+                        />
+
+                        <div className="rounded-2xl border border-dashed border-[#d8b06a] bg-[#fffaf3] p-4 text-center">
+                          {pendingPhoto ? (
+                            <>
+                              <img
+                                className="mx-auto aspect-[4/3] w-full max-w-xl rounded-2xl object-cover"
+                                src={pendingPhoto.previewUrl}
+                                alt="Anteprima nuova foto del giorno"
                               />
-                            </label>
-                            <div className="flex flex-col gap-3 sm:flex-row">
-                              <button className="premium-cta" type="submit" disabled={isAdminVerifying}>
-                                {isAdminVerifying ? "Verifica..." : "Sblocca gestione foto"}
-                              </button>
-                              <button
-                                className="inline-flex min-h-[50px] items-center justify-center rounded-2xl border border-stone-900/20 bg-white px-5 py-3 text-base font-black text-beach-ink transition duration-300 hover:-translate-y-0.5 hover:bg-stone-50"
-                                type="button"
-                                onClick={closePhotoManager}
-                              >
-                                Annulla
-                              </button>
-                            </div>
-                          </form>
-                        ) : (
-                          <>
+                              <p className="mt-3 text-sm font-bold text-slate-700">Anteprima compressa pronta per la pubblicazione.</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-base font-black text-beach-ink">Scatta o scegli dal dispositivo</p>
+                              <p className="mt-2 text-sm font-bold text-slate-700">Tablet, cellulare o computer. La foto verra' compressa prima del caricamento.</p>
+                            </>
+                          )}
+                        </div>
+
+                        {!isAdminAuthenticated ? (
+                          <label className="block">
+                            <span className="field-label">PIN admin</span>
                             <input
-                              ref={photoInputRef}
-                              className="hidden"
-                              type="file"
-                              accept="image/*"
-                              capture="environment"
-                              onChange={handlePhotoFileChange}
+                              className="field-input"
+                              type="password"
+                              inputMode="numeric"
+                              value={adminPinInput}
+                              onChange={(event) => setAdminPinInput(event.target.value)}
+                              placeholder="Inserisci il PIN prima della conferma"
                             />
-
-                            <div className="rounded-2xl border border-dashed border-[#d8b06a] bg-[#fffaf3] p-4 text-center">
-                              {pendingPhoto ? (
-                                <>
-                                  <img
-                                    className="mx-auto aspect-[4/3] w-full max-w-xl rounded-2xl object-cover"
-                                    src={pendingPhoto.previewUrl}
-                                    alt="Anteprima nuova foto del giorno"
-                                  />
-                                  <p className="mt-3 text-sm font-bold text-slate-700">Anteprima compressa pronta per la pubblicazione.</p>
-                                </>
-                              ) : (
-                                <>
-                                  <p className="text-base font-black text-beach-ink">Scatta o scegli dal dispositivo</p>
-                                  <p className="mt-2 text-sm font-bold text-slate-700">Tablet, cellulare o computer. La foto verra' compressa prima del caricamento.</p>
-                                </>
-                              )}
-                            </div>
-
-                            <div className="flex flex-col gap-3 sm:flex-row">
-                              <button className="premium-cta" type="button" onClick={() => photoInputRef.current?.click()}>
-                                {pendingPhoto ? "Carica nuova foto" : "Scatta o scegli dal dispositivo"}
-                              </button>
-                              <button
-                                className="inline-flex min-h-[50px] items-center justify-center rounded-2xl border border-stone-900/20 bg-white px-5 py-3 text-base font-black text-beach-ink transition duration-300 hover:-translate-y-0.5 hover:bg-stone-50"
-                                type="button"
-                                onClick={pendingPhoto ? clearPendingPhoto : closePhotoManager}
-                              >
-                                Annulla
-                              </button>
-                              <button className="premium-cta" type="button" disabled={!pendingPhoto || photoUploadState === "uploading"} onClick={confirmPhotoUpload}>
-                                {photoUploadState === "uploading" ? "Caricamento..." : "Conferma"}
-                              </button>
-                            </div>
-                          </>
+                          </label>
+                        ) : (
+                          <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-900">
+                            Accesso admin gia' attivo su questo dispositivo.
+                          </p>
                         )}
+
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                          <button className="premium-cta" type="button" onClick={() => photoInputRef.current?.click()}>
+                            {pendingPhoto ? "Carica nuova foto" : "Scatta o scegli dal dispositivo"}
+                          </button>
+                          <button
+                            className="inline-flex min-h-[50px] items-center justify-center rounded-2xl border border-stone-900/20 bg-white px-5 py-3 text-base font-black text-beach-ink transition duration-300 hover:-translate-y-0.5 hover:bg-stone-50"
+                            type="button"
+                            onClick={pendingPhoto ? clearPendingPhoto : closePhotoManager}
+                          >
+                            Annulla
+                          </button>
+                          <button className="premium-cta" type="button" disabled={!pendingPhoto || photoUploadState === "uploading" || isAdminVerifying} onClick={confirmPhotoUpload}>
+                            {photoUploadState === "uploading" || isAdminVerifying ? "Caricamento..." : "Conferma"}
+                          </button>
+                        </div>
 
                         {photoUploadMessage ? (
                           <p className={`text-sm font-black ${photoUploadState === "error" ? "text-red-700" : "text-beach-reef"}`}>
