@@ -1,6 +1,22 @@
 # Numero 5 Beach System
 
-Web app mobile-first per noleggio ombrelloni e lettini a Marina di Campo, con richiesta di prenotazione via WhatsApp e aggiornamento manuale delle condizioni mare/vento.
+Web app mobile-first per il noleggio ombrelloni e lettini a Marina di Campo, con richiesta via WhatsApp, vento automatico e foto del giorno aggiornabile dal gestore anche da tablet o cellulare.
+
+## Diagnosi progetto
+
+Stack rilevato:
+
+- `React 18`
+- `Vite 6`
+- `Tailwind CSS`
+- deploy statico su `Vercel`
+- API serverless in cartella `api/`
+
+Persistenza foto scelta:
+
+- `Vercel Blob` per salvare online la foto del giorno
+- route serverless protette da PIN admin
+- fallback visivo sui dati locali di `src/data/today.js` se non esiste ancora una foto pubblicata
 
 ## Avvio progetto
 
@@ -11,208 +27,230 @@ npm run dev
 
 Apri l'indirizzo mostrato dal terminale, di solito `http://localhost:5173`.
 
-## Foto del mattino dalla app
+Nota importante:
 
-Dentro la web app apri l'indirizzo con `?admin=1`, per esempio:
+- `npm run dev` avvia bene il frontend Vite
+- le route `api/` e l'upload Blob funzionano davvero in ambiente Vercel
+- per test locali completi delle API puoi usare `vercel dev`, se desideri una simulazione piu' fedele del deploy
+
+## Foto del Giorno da tablet o cellulare
+
+Per entrare in modalita' admin apri la web app con:
 
 ```text
-http://localhost:5173/?admin=1
+https://numero5-beach-system.vercel.app/?admin=true
 ```
 
-Compare la sezione `Area gestione mattina`.
+oppure in locale:
 
-Da li puoi aggiornare:
+```text
+http://localhost:5173/?admin=true
+```
 
-- foto spiaggia di oggi
-- testo condizioni
-- vento
-- direzione
-- meteo sintetico
-- disponibilita' ombrelloni
-- disponibilita' lettini
-- vento Meteo Militare
-- nota mare
-- stato verde/rosso
-- numero WhatsApp
+### Flusso admin
 
-Premi `Salva aggiornamento` per mantenere i dati nel browser.
+1. Apri il sito con `?admin=true`
+2. Tocca la card `Foto del Giorno`
+3. Inserisci il `PIN admin`
+4. Tocca `Scatta o scegli dal dispositivo`
+5. Seleziona o scatta la foto
+6. Controlla l'anteprima compressa
+7. Tocca `Conferma`
 
-Nota V1: senza backend, database o storage online, questo salvataggio resta nel browser/dispositivo usato per aggiornare. Per far vedere automaticamente la foto nuova a tutti i clienti serve uno step successivo: caricamento su hosting/storage oppure un piccolo pannello admin collegato a un servizio online.
+Risultato:
 
-## QR code per flyer
+- la foto viene compressa lato client
+- viene caricata su `Vercel Blob`
+- diventa pubblica per tutti i visitatori del sito
 
-Il QR code deve puntare all'URL pubblico della web app pubblicata, non a `localhost`.
+### Compressione immagine
 
-Flusso consigliato:
+Prima dell'upload la foto viene:
 
-1. Pubblicare la web app su Vercel, Netlify o dominio dedicato.
-2. Decidere l'URL finale, per esempio `https://numero5beach.it`.
-3. Generare il QR code in PNG/SVG con quell'URL.
-4. Inserire il QR nei flyer per hotel, reception e punti informativi.
+- ridimensionata con lato massimo a circa `1600px`
+- convertita in `JPEG`
+- compressa con qualita' `0.82`
 
-Quando l'URL finale e' pronto, il QR puo' essere generato in pochi secondi.
+Questo riduce peso e tempi di caricamento senza rovinare la resa sul sito.
 
-## Deploy consigliato
+## Admin e sicurezza
 
-Vercel e' la scelta consigliata per questa V1.
+La gestione foto non e' visibile ai visitatori normali.
+
+La UI admin compare solo quando l'URL contiene `?admin=true` o `?admin=1`.
+
+Protezione implementata:
+
+- verifica PIN tramite route `api/admin-auth.js`
+- sessione admin salvata in `localStorage`
+- upload protetto via header `x-admin-pin`
+
+Limite noto:
+
+- e' una protezione leggera, adatta a una V1 senza sistema utenti completo
+- per un livello piu' forte in futuro si puo' aggiungere autenticazione server-side vera
+
+## Variabili ambiente richieste
+
+Su Vercel aggiungi queste env var:
+
+- `ADMIN_PIN`
+- `BLOB_READ_WRITE_TOKEN`
+
+Puoi partire dal file:
+
+```text
+.env.example
+```
+
+Esempio locale:
+
+```bash
+ADMIN_PIN=1234
+BLOB_READ_WRITE_TOKEN=vercel_blob_rw_xxxxx
+```
+
+Non inserire mai il token vero nel repository.
+
+## Deploy Vercel
 
 Configurazione gia' pronta:
 
-- framework: Vite / React
-- install command: `npm install`
-- build command: `npm run build`
-- output directory: `dist`
-- file Vercel: `vercel.json`
+- Build Command: `npm run build`
+- Install Command: `npm install`
+- Output Directory: `dist`
+- file config: `vercel.json`
 
-Comandi utili:
+### Procedura da interfaccia
 
-```bash
-npm run build
-```
+1. Importa il repository su Vercel
+2. Apri `Settings > Environment Variables`
+3. Aggiungi:
+   - `ADMIN_PIN`
+   - `BLOB_READ_WRITE_TOKEN`
+4. Avvia il deploy
+5. Apri la URL pubblica
+6. Prova l'upload da telefono con `?admin=true`
 
-Il progetto e' statico: non richiede backend, database o pagamento.
-
-Procedura consigliata da interfaccia Vercel:
-
-1. Crea una repository GitHub con questa cartella.
-2. Vai su Vercel e scegli `Add New...` > `Project`.
-3. Importa la repository GitHub del progetto.
-4. Controlla che Vercel legga:
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-   - Install Command: `npm install`
-5. Premi `Deploy`.
-6. Apri la URL pubblica da telefono.
-7. Testa:
-   - apertura pagina in 4G/5G
-   - pulsante WhatsApp
-   - mappa Google Maps
-   - leggibilita' sotto sole
-8. Solo dopo conferma usa quella URL per generare il QR.
-
-Procedura alternativa da terminale, se usi Vercel CLI:
+### Procedura da terminale
 
 ```bash
 npm run build
 npx vercel
 ```
 
-Per il deploy finale di produzione:
+Deploy produzione:
 
 ```bash
 npx vercel --prod
 ```
 
-URL finale QR: da confermare dopo il deploy pubblico.
+## Vento automatico
 
-## Dati vento Meteo Militare
+La web app legge il vento automatico da `Open-Meteo` e usa i dati live per:
 
-La V1 mostra solo il vento con fonte `Servizio Meteorologico dell'Aeronautica Militare`.
+- direzione vento
+- intensita' in nodi
+- orario aggiornamento
+- rotazione freccia sulla mappa del golfo
 
-Per ora i dati sono modificabili manualmente dalla sezione `Area gestione mattina` o in `src/data/today.js`. Per un aggiornamento automatico servira' verificare una fonte tecnica ufficiale utilizzabile via API o un piccolo backend che raccolga il dato e lo pubblichi nell'app.
+Se il dato automatico non e' disponibile, l'app usa il fallback manuale in `src/data/today.js`.
 
-Direzioni supportate per la freccia sulla mappa:
+## Dati modificabili a mano
 
-- `N`
-- `NE`
-- `E`
-- `SE`
-- `S`
-- `SO`
-- `O`
-- `NO`
+Se vuoi aggiornare manualmente i contenuti base, usa:
 
-Sono supportati anche nomi comuni come `Maestrale`, `Scirocco`, `Libeccio`, `Ponente` e `Grecale`.
+```text
+src/data/today.js
+```
+
+Campi principali:
+
+- `whatsappNumber`
+- `heroImage`
+- `dailySeaPhoto`
+- `windMapImage`
+- `conditionText`
+- `wind.name`
+- `wind.direction`
+- `wind.note`
+- `weather.summary`
+- `availability.umbrellas`
+- `availability.sunbeds`
+- `availability.note`
+- `meteoWind.direction`
+- `meteoWind.intensity`
+- `meteoWind.updatedAt`
+- `meteoWind.sourceUrl`
+- `status`
+
+## File principali
+
+Frontend:
+
+- `src/App.jsx`
+- `src/data/today.js`
+- `src/data/translations.js`
+- `src/index.css`
+
+Upload foto:
+
+- `src/utils/imageCompression.js`
+- `src/services/photoService.js`
+- `api/admin-auth.js`
+- `api/photo-of-day.js`
+- `api/photo-of-day-upload.js`
+
+## QR code
+
+Il QR deve sempre puntare alla URL pubblica stabile della web app, non a `localhost` e non a URL temporanee.
+
+URL pubblica attuale:
+
+```text
+https://numero5-beach-system.vercel.app/
+```
 
 ## Base multilingua
 
-La struttura per le lingue e' pronta in:
+La struttura traduzioni e' pronta in:
 
-```js
+```text
 src/data/translations.js
 ```
 
-Per ora l'app usa italiano (`it`) come lingua di default. Sono gia' presenti chiavi base per `it`, `en` e `de`, cosi in futuro si puo' aggiungere un selettore lingua senza riscrivere i testi principali.
+Lingua attuale di default: `it`
+
+Lingue predisposte:
+
+- `it`
+- `en`
+- `de`
 
 ## Base PWA
 
-La web app e' predisposta per essere installabile su telefono:
+File presenti:
 
 - `public/manifest.json`
 - `public/icons/icon-192.svg`
 - `public/icons/icon-512.svg`
 
 Nome app: `Numero 5 Beach System`  
-Short name: `Numero 5`  
-Theme color: blu mare `#0a6fa3`
+Short name: `Numero 5`
 
 ## Colonna sonora
 
-La traccia audio strumentale e' in:
+File audio:
 
-```text
-public/audio/Cerulean_Tides.mp3
-public/audio/White_Stone_Terrace.mp3
-public/audio/Salt_on_the_Balcony.mp3
-```
+- `public/audio/Cerulean_Tides.mp3`
+- `public/audio/White_Stone_Terrace.mp3`
+- `public/audio/Salt_on_the_Balcony.mp3`
 
-La musica non parte automaticamente: il cliente deve toccare `MUSIC ON`. Il selettore accanto al pulsante permette di scegliere la traccia. Questo mantiene la web app elegante e compatibile con i browser mobile.
-
-## Dove cambiare foto nei file
-
-Le immagini sostituibili sono in:
-
-- `src/assets/foto-giornaliere/spiaggia-ombrellone.png`
-- `src/assets/foto-giornaliere/elba-dall-aereo.png`
-- `src/assets/foto-giornaliere/tramonto-senza-scritte.png`
-- `src/assets/mappe/golfo-marina-di-campo.png`
-
-Per cambiare una foto, aggiungi il nuovo file nella cartella giusta e aggiorna gli import in:
-
-```js
-src/data/today.js
-```
-
-Esempio:
-
-```js
-import todaySeaPhoto from "../assets/foto-giornaliere/mare-2026-06-01.png";
-```
-
-## Dove cambiare numero WhatsApp nei file
-
-Apri `src/data/today.js` e modifica:
-
-```js
-whatsappNumber: "393358060119",
-```
-
-Usa il prefisso internazionale senza `+`, spazi o trattini.
-
-## Aggiornamento manuale condizioni nei file
-
-Sempre in `src/data/today.js` puoi cambiare:
-
-- `dailySeaPhoto`: foto del mare aggiornata al mattino
-- `conditionText`: testo breve, per esempio `Foto aggiornata alle 08:00`
-- `wind.name`: vento del giorno
-- `wind.direction`: direzione
-- `wind.note`: nota sintetica
-- `weather.summary`: meteo sintetico
-- `availability.umbrellas`: disponibilita' ombrelloni
-- `availability.sunbeds`: disponibilita' lettini
-- `availability.note`: nota disponibilita'
-- `meteoWind.direction`: direzione vento Meteo Militare
-- `meteoWind.intensity`: intensita' vento
-- `meteoWind.updatedAt`: ora aggiornamento
-- `meteoWind.sourceUrl`: link fonte
-- `status`: uno tra `green-plus`, `green-minus`, `red-minus`, `red-plus`
+La musica parte solo dopo interazione utente tramite `MUSIC ON`, come richiesto dai browser mobile.
 
 ## Prossimi step
 
-- Collegare una vera foto giornaliera scattata dallo stabilimento.
-- Aggiungere logo ufficiale in `src/assets/logo`.
-- Sostituire le icone PWA placeholder con icone ufficiali.
-- Disegnare overlay con frecce verdi/rosse sulla mappa vento.
-- Preparare un QR code che punti alla web app pubblicata.
-- Pubblicare su Vercel, Netlify o hosting statico.
+- aggiungere logout admin esplicito
+- mostrare mini storico foto caricate
+- collegare eventuale descrizione foto del giorno modificabile da admin
+- migliorare la protezione admin con auth vera se il progetto cresce

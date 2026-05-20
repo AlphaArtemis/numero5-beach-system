@@ -25,7 +25,7 @@ export const today = {
     direction: "NO",
     intensity: "8 nodi",
     updatedAt: "08:00",
-    sourceUrl: "https://www.meteoam.it/",
+    sourceUrl: "https://open-meteo.com/",
   },
   status: "green-plus",
 };

@@ -1,12 +1,21 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { today, windLegend } from "./data/today";
 import { translations } from "./data/translations";
+import { compressImageFile } from "./utils/imageCompression";
+import { fetchPhotoOfTheDay, uploadPhotoOfTheDay, verifyAdminPin } from "./services/photoService";
 
 const STORAGE_KEY = "numero5-morning-update";
+const ADMIN_SESSION_KEY = "numero5-photo-admin-session";
+const ADMIN_PIN_KEY = "numero5-photo-admin-pin";
 const DEFAULT_LOCALE = "it";
-const LOCATION_COORDS = "42.750225,10.241150";
+const LOCATION_LATITUDE = 42.750225;
+const LOCATION_LONGITUDE = 10.24115;
+const LOCATION_COORDS = `${LOCATION_LATITUDE},${LOCATION_LONGITUDE}`;
 const GOOGLE_MAP_EMBED_URL = `https://www.google.com/maps?q=${LOCATION_COORDS}&z=18&output=embed`;
 const GOOGLE_MAP_DIRECTIONS_URL = `https://www.google.com/maps/search/?api=1&query=${LOCATION_COORDS}`;
+const OPEN_METEO_URL = `https://api.open-meteo.com/v1/forecast?latitude=${LOCATION_LATITUDE}&longitude=${LOCATION_LONGITUDE}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m,weather_code&wind_speed_unit=kn&timezone=Europe%2FRome`;
+const OPEN_METEO_SOURCE_URL = "https://open-meteo.com/";
+const METEO_REFRESH_MS = 60 * 60 * 1000;
 const SOUNDTRACK_TRACKS = [
   {
     label: "Cerulean",
@@ -136,6 +145,89 @@ function getWindRotation(direction = "") {
   };
 
   return directionAngles[normalizedDirection] ?? 0;
+}
+
+function getCompassDirectionFromDegrees(degrees) {
+  if (!Number.isFinite(degrees)) return "N";
+
+  const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"];
+  const normalizedDegrees = ((degrees % 360) + 360) % 360;
+  const index = Math.round(normalizedDegrees / 22.5) % directions.length;
+  return directions[index];
+}
+
+function formatKnots(value) {
+  if (!Number.isFinite(value)) return "";
+  return `${Math.round(value)} nodi`;
+}
+
+function formatWeatherTime(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat("it-IT", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function formatDisplayDate(value) {
+  if (!value) {
+    return new Intl.DateTimeFormat("it-IT", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(new Date());
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return formatDisplayDate();
+
+  return new Intl.DateTimeFormat("it-IT", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+function getWeatherSummaryFromCode(code) {
+  const weatherCode = Number(code);
+
+  if ([0].includes(weatherCode)) return "Sereno";
+  if ([1, 2].includes(weatherCode)) return "Poco nuvoloso";
+  if ([3].includes(weatherCode)) return "Nuvoloso";
+  if ([45, 48].includes(weatherCode)) return "Nebbia";
+  if ([51, 53, 55, 56, 57].includes(weatherCode)) return "Pioviggine";
+  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(weatherCode)) return "Pioggia";
+  if ([71, 73, 75, 77, 85, 86].includes(weatherCode)) return "Neve";
+  if ([95, 96, 99].includes(weatherCode)) return "Temporale";
+
+  return "Meteo aggiornato automaticamente";
+}
+
+function parseOpenMeteoWind(data) {
+  const current = data?.current;
+  const degrees = Number(current?.wind_direction_10m);
+  const windSpeed = Number(current?.wind_speed_10m);
+  const gusts = Number(current?.wind_gusts_10m);
+
+  if (!current || !Number.isFinite(degrees) || !Number.isFinite(windSpeed)) {
+    throw new Error("Dati vento automatici non disponibili.");
+  }
+
+  return {
+    direction: getCompassDirectionFromDegrees(degrees),
+    directionDegrees: degrees,
+    intensity: formatKnots(windSpeed),
+    gusts: Number.isFinite(gusts) ? formatKnots(gusts) : "",
+    updatedAt: formatWeatherTime(current.time) || "ora",
+    weatherSummary: getWeatherSummaryFromCode(current.weather_code),
+    sourceLabel: "Dati automatici",
+    sourceUrl: OPEN_METEO_SOURCE_URL,
+    isAutomatic: true,
+  };
 }
 
 function mergeTodayData(overrides = {}) {
@@ -285,7 +377,7 @@ function WaveDivider() {
   );
 }
 
-function TodayConditionsCard({ beachData, currentStatus, quickWhatsAppUrl, t }) {
+function TodayConditionsCard({ beachData, currentStatus, quickWhatsAppUrl, t, weatherSummary, windData, photoUrl }) {
   const availabilityText = getAvailabilityText(beachData.availability);
 
   return (
@@ -294,7 +386,7 @@ function TodayConditionsCard({ beachData, currentStatus, quickWhatsAppUrl, t }) 
         <div className="relative overflow-hidden rounded-2xl bg-[#efe1cf]">
           <img
             className="aspect-square h-full w-full object-cover sm:aspect-[4/3] lg:aspect-[16/9]"
-            src={beachData.dailySeaPhoto}
+            src={photoUrl}
             alt="Foto del mare di oggi"
             width="1280"
             height="960"
@@ -312,14 +404,14 @@ function TodayConditionsCard({ beachData, currentStatus, quickWhatsAppUrl, t }) 
             <h2 className="mt-1 text-xl font-black leading-tight text-beach-ink sm:text-3xl">{t.todayCard.title}</h2>
             <p className="mt-1 text-sm font-black leading-5 text-beach-ink sm:mt-2 sm:text-base">{beachData.conditionText}</p>
             <p className="mt-1 text-xs font-bold leading-5 text-slate-800 sm:text-sm">
-              {t.todayCard.weather}: {beachData.weather.summary}
+              {t.todayCard.weather}: {weatherSummary}
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:gap-3">
               <div className="rounded-2xl bg-[#1f2933] p-2 text-white sm:p-3">
                 <p className="text-[0.65rem] font-black uppercase text-white/80 sm:text-xs">{t.todayCard.wind}</p>
-                <p className="mt-1 text-lg font-black sm:text-xl">{beachData.meteoWind.direction}</p>
-                <p className="text-xs font-bold text-white/80 sm:text-sm">{beachData.meteoWind.intensity}</p>
+                <p className="mt-1 text-lg font-black sm:text-xl">{windData.direction}</p>
+                <p className="text-xs font-bold text-white/80 sm:text-sm">{windData.intensity}</p>
               </div>
               <div className={`rounded-2xl border p-2 sm:p-3 ${currentStatus.className}`}>
                 <p className="text-[0.65rem] font-black uppercase opacity-80 sm:text-xs">{t.todayCard.status}</p>
@@ -334,7 +426,7 @@ function TodayConditionsCard({ beachData, currentStatus, quickWhatsAppUrl, t }) 
             </div>
 
             <p className="mt-2 text-xs font-bold text-slate-800 sm:mt-3 sm:text-sm">
-              {t.todayCard.updatedAt} {beachData.meteoWind.updatedAt}
+              {windData.isAutomatic ? "Aggiornato automaticamente alle" : t.todayCard.updatedAt} {windData.updatedAt}
             </p>
             <p className="mt-1 text-xs font-black text-beach-ink sm:text-sm">
               {t.todayCard.phone}: {formatWhatsAppDisplay(beachData.whatsappNumber)}
@@ -355,6 +447,72 @@ function TodayConditionsCard({ beachData, currentStatus, quickWhatsAppUrl, t }) 
   );
 }
 
+function PhotoOfDaySection({
+  altText,
+  dateLabel,
+  description,
+  imageUrl,
+  isAdminAuthenticated,
+  isAdminMode,
+  isUploading,
+  onChangePhoto,
+  onOpenAdmin,
+}) {
+  const canManagePhoto = isAdminMode && isAdminAuthenticated;
+
+  return (
+    <article className="premium-card overflow-hidden">
+      <button
+        className={`group relative block w-full text-left ${isAdminMode ? "cursor-pointer" : "cursor-default"}`}
+        type="button"
+        onClick={canManagePhoto ? onChangePhoto : isAdminMode ? onOpenAdmin : undefined}
+      >
+        {imageUrl ? (
+          <img
+            className="aspect-[4/3] w-full object-cover sm:aspect-[16/9]"
+            src={imageUrl}
+            alt={altText}
+            width="1280"
+            height="960"
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <div className="grid aspect-[4/3] w-full place-items-center bg-[#efe1cf] px-6 text-center sm:aspect-[16/9]">
+            <div>
+              <p className="text-lg font-black text-beach-ink">Foto del Giorno</p>
+              <p className="mt-2 text-sm font-bold text-slate-700">Nessuna immagine disponibile al momento.</p>
+            </div>
+          </div>
+        )}
+
+        {canManagePhoto ? (
+          <div className="absolute inset-x-4 top-4 flex items-center justify-between gap-3 rounded-2xl bg-[#1f2933]/82 px-4 py-3 text-white shadow-soft backdrop-blur">
+            <div>
+              <p className="text-sm font-black uppercase text-orange-200">Foto del Giorno</p>
+              <p className="text-xs font-bold text-white/80">{dateLabel}</p>
+            </div>
+            <span className="inline-flex min-h-[46px] items-center justify-center rounded-2xl bg-white/92 px-4 py-2 text-sm font-black text-beach-ink">
+              {isUploading ? "Caricamento..." : "Cambia foto"}
+            </span>
+          </div>
+        ) : null}
+      </button>
+
+      <div className="p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="section-kicker">Foto del Giorno</p>
+            <h3 className="mt-2 text-2xl font-black text-beach-ink">Scatto di oggi</h3>
+          </div>
+          <p className="rounded-2xl border border-[#ecd9bf] bg-[#fff7eb] px-4 py-2 text-sm font-black text-[#7a4d18]">{dateLabel}</p>
+        </div>
+        <p className="mt-4 text-base font-bold leading-7 text-slate-800">{description}</p>
+      </div>
+    </article>
+  );
+}
+
 function App() {
   const [form, setForm] = useState(initialForm);
   const [beachData, setBeachData] = useState(loadMorningUpdate);
@@ -362,14 +520,49 @@ function App() {
   const [activeTrackIndex, setActiveTrackIndex] = useState(0);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [musicMessage, setMusicMessage] = useState("");
+  const [automaticWind, setAutomaticWind] = useState(null);
+  const [automaticWindError, setAutomaticWindError] = useState("");
+  const [photoOfDayUrl, setPhotoOfDayUrl] = useState(null);
+  const [photoOfDayUploadedAt, setPhotoOfDayUploadedAt] = useState(null);
+  const [photoUploadMessage, setPhotoUploadMessage] = useState("");
+  const [photoUploadState, setPhotoUploadState] = useState("idle");
+  const [pendingPhoto, setPendingPhoto] = useState(null);
+  const [isPhotoManagerOpen, setIsPhotoManagerOpen] = useState(false);
+  const [isAdminVerifying, setIsAdminVerifying] = useState(false);
+  const [adminPinInput, setAdminPinInput] = useState("");
+  const [publicPhotoError, setPublicPhotoError] = useState("");
+  const [adminPin, setAdminPin] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem(ADMIN_PIN_KEY) || "";
+  });
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(ADMIN_SESSION_KEY) === "true";
+  });
   const soundtrackRef = useRef(null);
+  const photoInputRef = useRef(null);
   const t = translations[DEFAULT_LOCALE];
   const activeTrack = SOUNDTRACK_TRACKS[activeTrackIndex] ?? SOUNDTRACK_TRACKS[0];
   const currentStatus = statusStyles[beachData.status] ?? statusStyles["green-minus"];
   const availabilityText = getAvailabilityText(beachData.availability);
-  const windRotation = getWindRotation(beachData.meteoWind.direction);
   const isGreenStatus = beachData.status?.startsWith("green");
   const whatsappDisplay = formatWhatsAppDisplay(beachData.whatsappNumber);
+  const fallbackWind = {
+    direction: beachData.meteoWind.direction,
+    directionDegrees: getWindRotation(beachData.meteoWind.direction),
+    intensity: beachData.meteoWind.intensity,
+    gusts: "",
+    updatedAt: beachData.meteoWind.updatedAt,
+    weatherSummary: beachData.weather.summary,
+    sourceLabel: "Dato manuale",
+    sourceUrl: beachData.meteoWind.sourceUrl,
+    isAutomatic: false,
+  };
+  const displayedWind = automaticWind ?? fallbackWind;
+  const weatherSummary = automaticWind?.weatherSummary ?? beachData.weather.summary;
+  const windRotation = displayedWind.directionDegrees;
+  const displayedDailyPhoto = photoOfDayUrl ?? beachData.dailySeaPhoto;
+  const displayedPhotoDate = formatDisplayDate(photoOfDayUploadedAt);
   const quickWhatsAppText = encodeURIComponent(
     [
       "Ciao Noleggio Numero 5, vorrei prenotare attrezzatura da spiaggia.",
@@ -392,6 +585,67 @@ function App() {
     if (typeof window === "undefined") return false;
     return window.location.search.includes("admin=1") || window.location.hash === "#aggiorna";
   }, []);
+  const isAdminMode = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.location.search.includes("admin=true") || window.location.search.includes("admin=1");
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadAutomaticWind() {
+      try {
+        const response = await fetch(OPEN_METEO_URL);
+
+        if (!response.ok) {
+          throw new Error("Meteo automatico non raggiungibile.");
+        }
+
+        const data = await response.json();
+        const parsedWind = parseOpenMeteoWind(data);
+
+        if (!isActive) return;
+        setAutomaticWind(parsedWind);
+        setAutomaticWindError("");
+      } catch (error) {
+        if (!isActive) return;
+        setAutomaticWind(null);
+        setAutomaticWindError(error.message || "Dati automatici non disponibili.");
+      }
+    }
+
+    loadAutomaticWind();
+    const refreshId = window.setInterval(loadAutomaticWind, METEO_REFRESH_MS);
+
+    return () => {
+      isActive = false;
+      window.clearInterval(refreshId);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadPublicPhoto() {
+      try {
+        const data = await fetchPhotoOfTheDay();
+        if (!isActive) return;
+
+        setPhotoOfDayUrl(data.photoUrl || null);
+        setPhotoOfDayUploadedAt(data.uploadedAt || null);
+        setPublicPhotoError(data.error || "");
+      } catch (error) {
+        if (!isActive) return;
+        setPublicPhotoError(error.message || "Errore recupero foto pubblica.");
+      }
+    }
+
+    loadPublicPhoto();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const featureHighlights = useMemo(
     () => [
@@ -403,7 +657,7 @@ function App() {
       },
       {
         title: t.highlights.wind,
-        text: `${beachData.meteoWind.direction} · ${beachData.meteoWind.intensity}`,
+        text: `${displayedWind.direction} · ${displayedWind.intensity}`,
         icon: IconWind,
         tone: isGreenStatus ? "green" : "coral",
       },
@@ -420,12 +674,126 @@ function App() {
         tone: "orange",
       },
     ],
-    [availabilityText, beachData.conditionText, beachData.meteoWind.direction, beachData.meteoWind.intensity, isGreenStatus, t, whatsappDisplay],
+    [availabilityText, beachData.conditionText, displayedWind.direction, displayedWind.intensity, isGreenStatus, t, whatsappDisplay],
   );
 
   function updateField(event) {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+  }
+
+  function resetPendingPhotoSelection() {
+    setPendingPhoto((current) => {
+      if (current?.previewUrl) {
+        URL.revokeObjectURL(current.previewUrl);
+      }
+
+      return null;
+    });
+
+    if (photoInputRef.current) {
+      photoInputRef.current.value = "";
+    }
+  }
+
+  function closePhotoManager() {
+    setIsPhotoManagerOpen(false);
+    resetPendingPhotoSelection();
+    setPhotoUploadMessage("");
+    setPhotoUploadState("idle");
+    setAdminPinInput("");
+  }
+
+  function clearPendingPhoto() {
+    resetPendingPhotoSelection();
+    setPhotoUploadMessage("");
+    setPhotoUploadState("idle");
+  }
+
+  function openPhotoManager() {
+    setIsPhotoManagerOpen(true);
+    setPhotoUploadMessage("");
+  }
+
+  function requestPhotoSelection() {
+    setIsPhotoManagerOpen(true);
+
+    if (!isAdminAuthenticated) {
+      setPhotoUploadMessage("Accesso admin richiesto");
+      return;
+    }
+
+    photoInputRef.current?.click();
+  }
+
+  async function handleAdminLogin(event) {
+    event.preventDefault();
+    setIsAdminVerifying(true);
+    setPhotoUploadMessage("");
+
+    try {
+      await verifyAdminPin(adminPinInput);
+      setAdminPin(adminPinInput);
+      setIsAdminAuthenticated(true);
+      window.localStorage.setItem(ADMIN_SESSION_KEY, "true");
+      window.localStorage.setItem(ADMIN_PIN_KEY, adminPinInput);
+      setPhotoUploadMessage("Accesso admin attivo");
+      photoInputRef.current?.click();
+    } catch (error) {
+      setPhotoUploadMessage(error.message || "Accesso admin richiesto");
+    } finally {
+      setIsAdminVerifying(false);
+    }
+  }
+
+  async function handlePhotoFileChange(event) {
+    const [file] = event.target.files || [];
+    if (!file) return;
+
+    setPhotoUploadState("preparing");
+    setPhotoUploadMessage("Preparazione immagine...");
+
+    try {
+      const compressedPhoto = await compressImageFile(file);
+
+      setPendingPhoto((current) => {
+        if (current?.previewUrl) {
+          URL.revokeObjectURL(current.previewUrl);
+        }
+
+        return compressedPhoto;
+      });
+      setPhotoUploadState("ready");
+      setPhotoUploadMessage("Anteprima pronta. Conferma per aggiornare.");
+    } catch (error) {
+      setPhotoUploadState("error");
+      setPhotoUploadMessage(error.message || "Errore caricamento");
+    }
+  }
+
+  async function confirmPhotoUpload() {
+    if (!pendingPhoto || !adminPin) return;
+
+    setPhotoUploadState("uploading");
+    setPhotoUploadMessage("Caricamento in corso...");
+
+    try {
+      const result = await uploadPhotoOfTheDay({
+        blob: pendingPhoto.blob,
+        fileName: pendingPhoto.fileName,
+        pin: adminPin,
+      });
+
+      setPhotoOfDayUrl(result.url);
+      setPhotoOfDayUploadedAt(new Date().toISOString());
+      setPublicPhotoError("");
+      resetPendingPhotoSelection();
+      setPhotoUploadState("success");
+      setPhotoUploadMessage("Foto aggiornata correttamente");
+    } catch (error) {
+      setPhotoUploadState("error");
+      setPhotoUploadMessage(error.message || "Errore durante il caricamento");
+    }
   }
 
   function buildWhatsAppMessage() {
@@ -704,7 +1072,7 @@ function App() {
             </p>
 
             <div className="mt-5 lg:hidden">
-              <TodayConditionsCard beachData={beachData} currentStatus={currentStatus} quickWhatsAppUrl={quickWhatsAppUrl} t={t} />
+              <TodayConditionsCard beachData={beachData} currentStatus={currentStatus} quickWhatsAppUrl={quickWhatsAppUrl} t={t} weatherSummary={weatherSummary} windData={displayedWind} photoUrl={displayedDailyPhoto} />
             </div>
 
             <p className="mx-auto mt-4 max-w-xl text-base font-bold leading-7 text-slate-900 sm:text-lg lg:mx-0">
@@ -722,7 +1090,7 @@ function App() {
           </div>
 
           <div className="hidden justify-self-end pt-7 lg:block lg:w-[350px] xl:w-[360px]">
-            <TodayConditionsCard beachData={beachData} currentStatus={currentStatus} quickWhatsAppUrl={quickWhatsAppUrl} t={t} />
+            <TodayConditionsCard beachData={beachData} currentStatus={currentStatus} quickWhatsAppUrl={quickWhatsAppUrl} t={t} weatherSummary={weatherSummary} windData={displayedWind} photoUrl={displayedDailyPhoto} />
           </div>
         </section>
       </header>
@@ -770,11 +1138,16 @@ function App() {
                   Oggi: {currentStatus.summary}
                 </div>
                 <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-black text-slate-800 shadow-soft backdrop-blur">
-                  Vento Meteo Militare: <span className="text-beach-ink">{beachData.meteoWind.direction} · {beachData.meteoWind.intensity}</span>
+                  Vento automatico: <span className="text-beach-ink">{displayedWind.direction} · {displayedWind.intensity}</span>
                 </div>
                 <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-black text-slate-800 shadow-soft backdrop-blur">
-                  Meteo sintetico: <span className="text-beach-ink">{beachData.weather.summary}</span>
+                  Meteo sintetico: <span className="text-beach-ink">{weatherSummary}</span>
                 </div>
+                {automaticWindError ? (
+                  <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-black text-orange-950 shadow-soft">
+                    Dato automatico non disponibile: uso il vento manuale.
+                  </div>
+                ) : null}
                 <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-black text-slate-800 shadow-soft backdrop-blur">
                   Disponibilita': <span className="text-beach-ink">{availabilityText} · {beachData.availability.note}</span>
                 </div>
@@ -900,35 +1273,141 @@ function App() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-              <article className="premium-card overflow-hidden">
-                <img
-                  className="aspect-[4/3] w-full object-cover sm:aspect-[16/9]"
-                  src={beachData.dailySeaPhoto}
-                  alt="Foto aggiornata del mare di oggi"
-                  width="1280"
-                  height="960"
-                  loading="lazy"
-                  decoding="async"
+              <div className="space-y-4">
+                <PhotoOfDaySection
+                  altText="Foto aggiornata del mare di oggi"
+                  dateLabel={displayedPhotoDate}
+                  description={beachData.wind.note}
+                  imageUrl={displayedDailyPhoto}
+                  isAdminAuthenticated={isAdminAuthenticated}
+                  isAdminMode={isAdminMode}
+                  isUploading={photoUploadState === "uploading"}
+                  onChangePhoto={requestPhotoSelection}
+                  onOpenAdmin={openPhotoManager}
                 />
-                <div className="p-5">
-                  <p className="text-lg font-black text-beach-ink">{beachData.conditionText}</p>
-                  <p className="mt-2 text-base font-bold leading-7 text-slate-800">{beachData.wind.note}</p>
-                </div>
-              </article>
+
+                {isAdminMode ? (
+                  <div className="premium-card p-4 sm:p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-black uppercase text-[#e97900]">Gestione foto</p>
+                        <p className="mt-1 text-sm font-bold text-slate-700">
+                          {isAdminAuthenticated ? "Modalita' admin attiva" : "Accesso admin richiesto"}
+                        </p>
+                      </div>
+                      <button
+                        className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-[#ecd9bf] bg-[#fff7eb] px-4 py-2 text-sm font-black text-beach-ink transition duration-300 hover:-translate-y-0.5 hover:bg-white"
+                        type="button"
+                        onClick={openPhotoManager}
+                      >
+                        {isAdminAuthenticated ? "Carica nuova foto" : "Accesso admin"}
+                      </button>
+                    </div>
+
+                    {isPhotoManagerOpen ? (
+                      <div className="mt-4 space-y-4">
+                        {!isAdminAuthenticated ? (
+                          <form className="space-y-3" onSubmit={handleAdminLogin}>
+                            <label className="block">
+                              <span className="field-label">PIN admin</span>
+                              <input
+                                className="field-input"
+                                type="password"
+                                inputMode="numeric"
+                                value={adminPinInput}
+                                onChange={(event) => setAdminPinInput(event.target.value)}
+                                placeholder="Inserisci il PIN"
+                                required
+                              />
+                            </label>
+                            <div className="flex flex-col gap-3 sm:flex-row">
+                              <button className="premium-cta" type="submit" disabled={isAdminVerifying}>
+                                {isAdminVerifying ? "Verifica..." : "Sblocca gestione foto"}
+                              </button>
+                              <button
+                                className="inline-flex min-h-[50px] items-center justify-center rounded-2xl border border-stone-900/20 bg-white px-5 py-3 text-base font-black text-beach-ink transition duration-300 hover:-translate-y-0.5 hover:bg-stone-50"
+                                type="button"
+                                onClick={closePhotoManager}
+                              >
+                                Annulla
+                              </button>
+                            </div>
+                          </form>
+                        ) : (
+                          <>
+                            <input
+                              ref={photoInputRef}
+                              className="hidden"
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              onChange={handlePhotoFileChange}
+                            />
+
+                            <div className="rounded-2xl border border-dashed border-[#d8b06a] bg-[#fffaf3] p-4 text-center">
+                              {pendingPhoto ? (
+                                <>
+                                  <img
+                                    className="mx-auto aspect-[4/3] w-full max-w-xl rounded-2xl object-cover"
+                                    src={pendingPhoto.previewUrl}
+                                    alt="Anteprima nuova foto del giorno"
+                                  />
+                                  <p className="mt-3 text-sm font-bold text-slate-700">Anteprima compressa pronta per la pubblicazione.</p>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-base font-black text-beach-ink">Scatta o scegli dal dispositivo</p>
+                                  <p className="mt-2 text-sm font-bold text-slate-700">Tablet, cellulare o computer. La foto verra' compressa prima del caricamento.</p>
+                                </>
+                              )}
+                            </div>
+
+                            <div className="flex flex-col gap-3 sm:flex-row">
+                              <button className="premium-cta" type="button" onClick={() => photoInputRef.current?.click()}>
+                                {pendingPhoto ? "Carica nuova foto" : "Scatta o scegli dal dispositivo"}
+                              </button>
+                              <button
+                                className="inline-flex min-h-[50px] items-center justify-center rounded-2xl border border-stone-900/20 bg-white px-5 py-3 text-base font-black text-beach-ink transition duration-300 hover:-translate-y-0.5 hover:bg-stone-50"
+                                type="button"
+                                onClick={pendingPhoto ? clearPendingPhoto : closePhotoManager}
+                              >
+                                Annulla
+                              </button>
+                              <button className="premium-cta" type="button" disabled={!pendingPhoto || photoUploadState === "uploading"} onClick={confirmPhotoUpload}>
+                                {photoUploadState === "uploading" ? "Caricamento..." : "Conferma"}
+                              </button>
+                            </div>
+                          </>
+                        )}
+
+                        {photoUploadMessage ? (
+                          <p className={`text-sm font-black ${photoUploadState === "error" ? "text-red-700" : "text-beach-reef"}`}>
+                            {photoUploadMessage}
+                          </p>
+                        ) : null}
+                        {publicPhotoError ? <p className="text-sm font-bold text-slate-600">{publicPhotoError}</p> : null}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
 
               <aside className="premium-glass p-5 sm:p-6">
-                <p className="text-sm font-black uppercase text-orange-200">Vento Meteo Militare</p>
+                <p className="text-sm font-black uppercase text-orange-200">Vento automatico</p>
                 <h3 className="mt-3 text-4xl font-black leading-tight text-white">
-                  {beachData.meteoWind.direction} · {beachData.meteoWind.intensity}
+                  {displayedWind.direction} · {displayedWind.intensity}
                 </h3>
-                <p className="mt-2 text-sm font-bold text-white/80">Aggiornato alle {beachData.meteoWind.updatedAt}</p>
+                <p className="mt-2 text-sm font-bold text-white/80">
+                  {displayedWind.isAutomatic ? "Aggiornato automaticamente alle" : "Aggiornato alle"} {displayedWind.updatedAt}
+                </p>
+                {displayedWind.gusts ? <p className="mt-1 text-sm font-bold text-white/70">Raffiche: {displayedWind.gusts}</p> : null}
                 <a
                   className="mt-3 inline-block text-sm font-bold text-orange-200 underline decoration-orange-200/40 underline-offset-4"
-                  href={beachData.meteoWind.sourceUrl}
+                  href={displayedWind.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Fonte: Servizio Meteorologico dell'Aeronautica Militare
+                  Fonte: {displayedWind.sourceLabel}
                 </a>
 
                 <div className="mt-6 grid gap-3">
@@ -980,28 +1459,30 @@ function App() {
                 decoding="async"
               />
               <div className="absolute inset-0 bg-gradient-to-b from-[#1f2933]/0 via-transparent to-[#1f2933]/58" />
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center" data-wind-direction={beachData.meteoWind.direction}>
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center" data-wind-direction={displayedWind.direction}>
                 <div
-                  aria-label={`Direzione vento ${beachData.meteoWind.direction}`}
+                  aria-label={`Direzione vento ${displayedWind.direction}`}
                   className="wind-arrow"
                   style={windArrowStyle}
                 >
-                  <span>{beachData.meteoWind.direction}</span>
+                  <span>{displayedWind.direction}</span>
                 </div>
               </div>
               <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-between gap-2 bg-[#1f2933]/90 px-4 py-3 text-white shadow-soft backdrop-blur-xl">
-                <p className="text-xs font-black uppercase text-orange-200 sm:text-sm">Vento Meteo Militare</p>
+                <p className="text-xs font-black uppercase text-orange-200 sm:text-sm">Vento automatico</p>
                 <p className="text-sm font-black sm:text-base">
-                  {beachData.meteoWind.direction} · {beachData.meteoWind.intensity}
+                  {displayedWind.direction} · {displayedWind.intensity}
                 </p>
-                <p className="text-xs font-bold text-white/80 sm:text-sm">Aggiornato ogni ora · {beachData.meteoWind.updatedAt}</p>
+                <p className="text-xs font-bold text-white/80 sm:text-sm">
+                  {displayedWind.isAutomatic ? "Aggiornato ogni ora" : "Dato manuale"} · {displayedWind.updatedAt}
+                </p>
                 <a
                   className="text-xs font-bold text-orange-200 underline decoration-orange-200/40 underline-offset-4"
-                  href={beachData.meteoWind.sourceUrl}
+                  href={displayedWind.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Fonte MeteoAM
+                  Fonte automatica
                 </a>
               </div>
             </div>
@@ -1162,7 +1643,7 @@ function App() {
                     </label>
 
                     <label className="block">
-                      <span className="field-label">Vento Meteo Militare</span>
+                      <span className="field-label">Vento manuale fallback</span>
                       <input
                         className="field-input"
                         name="meteoWind.direction"
@@ -1192,7 +1673,7 @@ function App() {
                     </label>
 
                     <label className="block">
-                      <span className="field-label">Link fonte meteo</span>
+                      <span className="field-label">Link fonte fallback</span>
                       <input
                         className="field-input"
                         name="meteoWind.sourceUrl"
