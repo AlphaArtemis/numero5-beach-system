@@ -541,6 +541,7 @@ function App() {
   });
   const soundtrackRef = useRef(null);
   const photoInputRef = useRef(null);
+  const photoSectionRef = useRef(null);
   const t = translations[DEFAULT_LOCALE];
   const activeTrack = SOUNDTRACK_TRACKS[activeTrackIndex] ?? SOUNDTRACK_TRACKS[0];
   const currentStatus = statusStyles[beachData.status] ?? statusStyles["green-minus"];
@@ -713,6 +714,17 @@ function App() {
   function openPhotoManager() {
     setIsPhotoManagerOpen(true);
     setPhotoUploadMessage("");
+  }
+
+  function openPhotoManagerFromAnywhere() {
+    openPhotoManager();
+
+    window.setTimeout(() => {
+      photoSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 40);
   }
 
   function requestPhotoSelection() {
@@ -1040,6 +1052,15 @@ function App() {
         <nav className="relative z-10 mx-auto flex max-w-6xl items-center justify-end gap-3 px-5 py-5 sm:px-8">
           <div className="flex flex-1 justify-start gap-2 text-sm font-black sm:justify-end">
             {renderSoundtrackControl("hidden sm:flex", "", "w-28")}
+            {isAdminMode ? (
+              <button
+                className="nav-pill hidden sm:inline-flex"
+                type="button"
+                onClick={openPhotoManagerFromAnywhere}
+              >
+                {isAdminAuthenticated ? "Aggiungi foto" : "Admin foto"}
+              </button>
+            ) : null}
             <a className="nav-pill" href="#prenota">
               {t.nav.book}
             </a>
@@ -1272,7 +1293,7 @@ function App() {
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <div ref={photoSectionRef} className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
               <div className="space-y-4">
                 <PhotoOfDaySection
                   altText="Foto aggiornata del mare di oggi"
@@ -1741,6 +1762,16 @@ function App() {
           </p>
         ) : null}
       </div>
+
+      {isAdminMode ? (
+        <button
+          className="fixed bottom-[11.5rem] right-4 z-50 inline-flex min-h-[54px] items-center justify-center rounded-2xl bg-[#1f2933] px-4 py-3 text-sm font-black text-white shadow-[0_20px_48px_rgba(31,41,51,0.28)] sm:right-8 sm:bottom-8 sm:min-h-[50px] sm:px-5"
+          type="button"
+          onClick={openPhotoManagerFromAnywhere}
+        >
+          {isAdminAuthenticated ? "Aggiungi foto" : "Admin foto"}
+        </button>
+      ) : null}
 
       <a
         className="fixed bottom-4 left-4 right-4 z-50 inline-flex min-h-[58px] items-center justify-center rounded-2xl bg-[#ff8c00] px-5 py-3 text-lg font-black text-white shadow-[0_20px_48px_rgba(31,41,51,0.28)] sm:hidden"
