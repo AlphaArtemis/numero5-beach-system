@@ -456,16 +456,15 @@ function PhotoOfDaySection({
   isAdminMode,
   isUploading,
   onChangePhoto,
-  onOpenAdmin,
 }) {
   const canManagePhoto = isAdminMode && isAdminAuthenticated;
 
   return (
     <article className="premium-card overflow-hidden">
       <button
-        className={`group relative block w-full text-left ${isAdminMode ? "cursor-pointer" : "cursor-default"}`}
+        className={`group relative block w-full text-left ${canManagePhoto ? "cursor-pointer" : "cursor-default"}`}
         type="button"
-        onClick={canManagePhoto ? onChangePhoto : isAdminMode ? onOpenAdmin : undefined}
+        onClick={canManagePhoto ? onChangePhoto : undefined}
       >
         {imageUrl ? (
           <img
@@ -541,7 +540,6 @@ function App() {
   });
   const soundtrackRef = useRef(null);
   const photoInputRef = useRef(null);
-  const photoSectionRef = useRef(null);
   const t = translations[DEFAULT_LOCALE];
   const activeTrack = SOUNDTRACK_TRACKS[activeTrackIndex] ?? SOUNDTRACK_TRACKS[0];
   const currentStatus = statusStyles[beachData.status] ?? statusStyles["green-minus"];
@@ -716,15 +714,31 @@ function App() {
     setPhotoUploadMessage("");
   }
 
-  function openPhotoManagerFromAnywhere() {
-    openPhotoManager();
+  async function unlockPhotoAdmin() {
+    setPhotoUploadMessage("");
 
-    window.setTimeout(() => {
-      photoSectionRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 40);
+    if (!adminPinInput.trim()) {
+      setPhotoUploadState("error");
+      setPhotoUploadMessage("Inserisci il PIN admin.");
+      return;
+    }
+
+    setIsAdminVerifying(true);
+
+    try {
+      await verifyAdminPin(adminPinInput.trim());
+      setAdminPin(adminPinInput.trim());
+      setIsAdminAuthenticated(true);
+      window.localStorage.setItem(ADMIN_SESSION_KEY, "true");
+      window.localStorage.setItem(ADMIN_PIN_KEY, adminPinInput.trim());
+      setPhotoUploadState("success");
+      setPhotoUploadMessage("Area foto sbloccata su questo dispositivo.");
+    } catch (error) {
+      setPhotoUploadState("error");
+      setPhotoUploadMessage(error.message || "PIN non valido.");
+    } finally {
+      setIsAdminVerifying(false);
+    }
   }
 
   function requestPhotoSelection() {
@@ -1044,15 +1058,6 @@ function App() {
         <nav className="relative z-10 mx-auto flex max-w-6xl items-center justify-end gap-3 px-5 py-5 sm:px-8">
           <div className="flex flex-1 justify-start gap-2 text-sm font-black sm:justify-end">
             {renderSoundtrackControl("hidden sm:flex", "", "w-28")}
-            {isAdminMode ? (
-              <button
-                className="nav-pill hidden sm:inline-flex"
-                type="button"
-                onClick={openPhotoManagerFromAnywhere}
-              >
-                {isAdminAuthenticated ? "Aggiungi foto" : "Admin foto"}
-              </button>
-            ) : null}
             <a className="nav-pill" href="#prenota">
               {t.nav.book}
             </a>
@@ -1234,44 +1239,6 @@ function App() {
           </div>
         </section>
 
-        <section className="bg-[#f2e7d8] py-12 sm:py-16">
-          <div className="mx-auto grid max-w-6xl gap-6 px-5 sm:px-8 lg:grid-cols-[1fr_0.82fr] lg:items-start">
-            <div>
-              <p className="section-kicker">{t.howItWorks.kicker}</p>
-              <h2 className="section-title">{t.howItWorks.title}</h2>
-            </div>
-
-            <div className="grid gap-3">
-              {t.howItWorks.steps.map((step, index) => (
-                <article className="rounded-2xl border border-white/90 bg-white/95 p-4 shadow-soft" key={step.title}>
-                  <div className="flex gap-4">
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#1f2933] text-lg font-black text-white">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <h3 className="text-lg font-black text-beach-ink">{step.title}</h3>
-                      <p className="mt-1 text-base font-bold leading-7 text-slate-800">{step.text}</p>
-                    </div>
-                  </div>
-                </article>
-              ))}
-
-              <article className="rounded-2xl border border-white/90 bg-white/95 p-4 shadow-soft">
-                <h3 className="text-lg font-black text-beach-ink">{t.howItWorks.whereTitle}</h3>
-                <p className="mt-1 text-base font-bold leading-7 text-slate-800">{t.howItWorks.whereText}</p>
-                <a
-                  className="premium-cta mt-4 w-full text-center text-base"
-                  href={quickWhatsAppUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {t.howItWorks.whatsappCta}
-                </a>
-              </article>
-            </div>
-          </div>
-        </section>
-
         <section id="condizioni" className="bg-[#fff6e8] py-12 sm:py-16">
           <div className="mx-auto max-w-6xl px-5 sm:px-8">
             <div className="mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -1296,28 +1263,57 @@ function App() {
                   isAdminMode={isAdminMode}
                   isUploading={photoUploadState === "uploading"}
                   onChangePhoto={requestPhotoSelection}
-                  onOpenAdmin={openPhotoManager}
                 />
 
                 {isAdminMode ? (
                   <div className="premium-card p-4 sm:p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm font-black uppercase text-[#e97900]">Gestione foto</p>
+                        <p className="text-sm font-black uppercase text-[#e97900]">Area riservata foto</p>
                         <p className="mt-1 text-sm font-bold text-slate-700">
-                          {isAdminAuthenticated ? "Modalita' admin attiva" : "Accesso admin richiesto"}
+                          {isAdminAuthenticated ? "Gestione foto attiva solo su questo dispositivo." : "Accesso privato richiesto per mostrare Aggiungi foto."}
                         </p>
                       </div>
-                      <button
-                        className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-[#ecd9bf] bg-[#fff7eb] px-4 py-2 text-sm font-black text-beach-ink transition duration-300 hover:-translate-y-0.5 hover:bg-white"
-                        type="button"
-                        onClick={openPhotoManager}
-                      >
-                        {isAdminAuthenticated ? "Carica nuova foto" : "Accesso admin"}
-                      </button>
+                      {isAdminAuthenticated ? (
+                        <button
+                          className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-[#ecd9bf] bg-[#fff7eb] px-4 py-2 text-sm font-black text-beach-ink transition duration-300 hover:-translate-y-0.5 hover:bg-white"
+                          type="button"
+                          onClick={openPhotoManager}
+                        >
+                          Aggiungi foto
+                        </button>
+                      ) : null}
                     </div>
 
-                    {isPhotoManagerOpen ? (
+                    {!isAdminAuthenticated ? (
+                      <div className="mt-4 space-y-4">
+                        <label className="block">
+                          <span className="field-label">PIN admin</span>
+                          <input
+                            className="field-input"
+                            type="password"
+                            inputMode="numeric"
+                            value={adminPinInput}
+                            onChange={(event) => setAdminPinInput(event.target.value)}
+                            placeholder="Inserisci il PIN per sbloccare l'upload"
+                          />
+                        </label>
+
+                        <div className="flex flex-col gap-3 sm:flex-row">
+                          <button className="premium-cta" type="button" onClick={unlockPhotoAdmin} disabled={isAdminVerifying}>
+                            {isAdminVerifying ? "Verifica..." : "Sblocca Aggiungi foto"}
+                          </button>
+                        </div>
+
+                        {photoUploadMessage ? (
+                          <p className={`text-sm font-black ${photoUploadState === "error" ? "text-red-700" : "text-beach-reef"}`}>
+                            {photoUploadMessage}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {isAdminAuthenticated && isPhotoManagerOpen ? (
                       <div className="mt-4 space-y-4">
                         <input
                           ref={photoInputRef}
@@ -1346,23 +1342,9 @@ function App() {
                           )}
                         </div>
 
-                        {!isAdminAuthenticated ? (
-                          <label className="block">
-                            <span className="field-label">PIN admin</span>
-                            <input
-                              className="field-input"
-                              type="password"
-                              inputMode="numeric"
-                              value={adminPinInput}
-                              onChange={(event) => setAdminPinInput(event.target.value)}
-                              placeholder="Inserisci il PIN prima della conferma"
-                            />
-                          </label>
-                        ) : (
-                          <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-900">
-                            Accesso admin gia' attivo su questo dispositivo.
-                          </p>
-                        )}
+                        <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-900">
+                          Accesso admin gia' attivo su questo dispositivo.
+                        </p>
 
                         <div className="flex flex-col gap-3 sm:flex-row">
                           <button className="premium-cta" type="button" onClick={() => photoInputRef.current?.click()}>
@@ -1741,16 +1723,6 @@ function App() {
           </p>
         ) : null}
       </div>
-
-      {isAdminMode ? (
-        <button
-          className="fixed bottom-[11.5rem] right-4 z-50 inline-flex min-h-[54px] items-center justify-center rounded-2xl bg-[#1f2933] px-4 py-3 text-sm font-black text-white shadow-[0_20px_48px_rgba(31,41,51,0.28)] sm:right-8 sm:bottom-8 sm:min-h-[50px] sm:px-5"
-          type="button"
-          onClick={openPhotoManagerFromAnywhere}
-        >
-          {isAdminAuthenticated ? "Aggiungi foto" : "Admin foto"}
-        </button>
-      ) : null}
 
       <a
         className="fixed bottom-4 left-4 right-4 z-50 inline-flex min-h-[58px] items-center justify-center rounded-2xl bg-[#ff8c00] px-5 py-3 text-lg font-black text-white shadow-[0_20px_48px_rgba(31,41,51,0.28)] sm:hidden"
