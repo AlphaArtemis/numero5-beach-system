@@ -1252,7 +1252,7 @@ function App() {
               </div>
             </div>
 
-            <div ref={photoSectionRef} className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
               <div className="space-y-4">
                 <PhotoOfDaySection
                   altText="Foto aggiornata del mare di oggi"
