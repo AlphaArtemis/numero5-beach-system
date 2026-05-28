@@ -4,39 +4,50 @@ function getAdminPin() {
   return process.env.ADMIN_PIN || process.env.VITE_ADMIN_PIN || "";
 }
 
-export default async function handler(request) {
-  if (request.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
+async function getRequestBody(request) {
+  if (typeof request.body === "string") {
+    try {
+      return JSON.parse(request.body);
+    } catch {
+      return null;
+    }
   }
 
-  const body = await request.json().catch(() => null);
+  if (request.body && typeof request.body === "object") {
+    return request.body;
+  }
+
+  if (typeof request.json === "function") {
+    return request.json().catch(() => null);
+  }
+
+  return null;
+}
+
+export default async function handler(request, response) {
+  if (request.method !== "POST") {
+    return response.status(405).json({ error: "Method Not Allowed" });
+  }
+
+  const body = await getRequestBody(request);
   if (!body) {
-    return new Response(JSON.stringify({ error: "Body non valido." }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return response.status(400).json({ error: "Body non valido." });
   }
 
   const isTokenRequest = body.type === "blob.generate-client-token";
   if (isTokenRequest) {
     const configuredPin = getAdminPin();
-    const providedPin = request.headers.get("x-admin-pin");
+    const providedPin =
+      request.headers?.["x-admin-pin"] ||
+      request.headers?.["X-Admin-Pin"] ||
+      (typeof request.headers?.get === "function" ? request.headers.get("x-admin-pin") : undefined);
 
     if (!configuredPin) {
-      return new Response(JSON.stringify({ error: "Admin PIN non configurato." }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      return response.status(500).json({ error: "Admin PIN non configurato." });
     }
 
     if (providedPin !== configuredPin) {
-      return new Response(JSON.stringify({ error: "Accesso admin richiesto." }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
+      return response.status(401).json({ error: "Accesso admin richiesto." });
     }
   }
 
@@ -59,14 +70,9 @@ export default async function handler(request) {
       onUploadCompleted: async () => {},
     });
 
-    return new Response(JSON.stringify(jsonResponse), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return response.status(200).json(jsonResponse);
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message || "Errore upload blob." }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    const statusCode = error.message === "Storage foto non configurato su Vercel." ? 500 : 400;
+    return response.status(statusCode).json({ error: error.message || "Errore upload blob." });
   }
 }

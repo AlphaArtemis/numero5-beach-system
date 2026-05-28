@@ -1,11 +1,8 @@
 import { list } from "@vercel/blob";
 
-export default async function handler(request) {
+export default async function handler(request, response) {
   if (request.method !== "GET") {
-    return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
-      status: 405,
-      headers: { "Content-Type": "application/json" },
-    });
+    return response.status(405).json({ error: "Method Not Allowed" });
   }
 
   try {
@@ -22,34 +19,18 @@ export default async function handler(request) {
       .filter((blob) => !blob.pathname.endsWith(".json"))
       .sort((left, right) => new Date(right.uploadedAt).getTime() - new Date(left.uploadedAt).getTime())[0];
 
-    return new Response(
-      JSON.stringify({
-        photoUrl: latestPhoto?.url ?? null,
-        uploadedAt: latestPhoto?.uploadedAt ?? null,
-        pathname: latestPhoto?.pathname ?? null,
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store",
-        },
-      },
-    );
+    response.setHeader("Cache-Control", "no-store");
+    return response.status(200).json({
+      photoUrl: latestPhoto?.url ?? null,
+      uploadedAt: latestPhoto?.uploadedAt ?? null,
+      pathname: latestPhoto?.pathname ?? null,
+    });
   } catch (error) {
-    return new Response(
-      JSON.stringify({
-        photoUrl: null,
-        uploadedAt: null,
-        error: error.message || "Errore lettura foto pubblica.",
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store",
-        },
-      },
-    );
+    response.setHeader("Cache-Control", "no-store");
+    return response.status(200).json({
+      photoUrl: null,
+      uploadedAt: null,
+      error: error.message || "Errore lettura foto pubblica.",
+    });
   }
 }
