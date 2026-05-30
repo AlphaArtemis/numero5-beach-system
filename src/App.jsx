@@ -8,6 +8,21 @@ const STORAGE_KEY = "numero5-morning-update";
 const ADMIN_SESSION_KEY = "numero5-photo-admin-session";
 const ADMIN_PIN_KEY = "numero5-photo-admin-pin";
 const DEFAULT_LOCALE = "it";
+const LOCALE_STORAGE_KEY = "numero5-site-locale";
+const LOCALE_OPTIONS = [
+  { code: "it", flag: "🇮🇹", shortLabel: "ITA", name: "Italiano" },
+  { code: "en", flag: "🇬🇧", shortLabel: "ENG", name: "English" },
+  { code: "es", flag: "🇪🇸", shortLabel: "ESP", name: "Espanol" },
+  { code: "fr", flag: "🇫🇷", shortLabel: "FRA", name: "Francais" },
+  { code: "de", flag: "🇩🇪", shortLabel: "GER", name: "Deutsch" },
+];
+const INTL_LOCALES = {
+  it: "it-IT",
+  en: "en-GB",
+  es: "es-ES",
+  fr: "fr-FR",
+  de: "de-DE",
+};
 const LOCATION_LATITUDE = 42.750225;
 const LOCATION_LONGITUDE = 10.24115;
 const LOCATION_COORDS = `${LOCATION_LATITUDE},${LOCATION_LONGITUDE}`;
@@ -93,6 +108,10 @@ function formatWhatsAppDisplay(number) {
   return digits ? `+${digits}` : "WhatsApp";
 }
 
+function getIntlLocale(locale = DEFAULT_LOCALE) {
+  return INTL_LOCALES[locale] ?? INTL_LOCALES[DEFAULT_LOCALE];
+}
+
 function getAvailabilityText(availability = {}) {
   return [availability.umbrellas, availability.sunbeds].filter(Boolean).join(" · ");
 }
@@ -147,35 +166,47 @@ function getWindRotation(direction = "") {
   return directionAngles[normalizedDirection] ?? 0;
 }
 
-function getCompassDirectionFromDegrees(degrees) {
+function getCompassDirectionFromDegrees(degrees, locale = DEFAULT_LOCALE) {
   if (!Number.isFinite(degrees)) return "N";
 
-  const directions = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"];
+  const directions =
+    locale === "en" || locale === "de"
+      ? ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+      : ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSO", "SO", "OSO", "O", "ONO", "NO", "NNO"];
   const normalizedDegrees = ((degrees % 360) + 360) % 360;
   const index = Math.round(normalizedDegrees / 22.5) % directions.length;
   return directions[index];
 }
 
-function formatKnots(value) {
+function formatWindSpeed(value, locale = DEFAULT_LOCALE) {
   if (!Number.isFinite(value)) return "";
-  return `${Math.round(value)} nodi`;
+
+  const unitByLocale = {
+    it: "nodi",
+    en: "knots",
+    es: "nudos",
+    fr: "noeuds",
+    de: "Knoten",
+  };
+
+  return `${Math.round(value)} ${unitByLocale[locale] ?? unitByLocale[DEFAULT_LOCALE]}`;
 }
 
-function formatWeatherTime(value) {
+function formatWeatherTime(value, locale = DEFAULT_LOCALE) {
   if (!value) return "";
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
 
-  return new Intl.DateTimeFormat("it-IT", {
+  return new Intl.DateTimeFormat(getIntlLocale(locale), {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
 }
 
-function formatDisplayDate(value) {
+function formatDisplayDate(value, locale = DEFAULT_LOCALE) {
   if (!value) {
-    return new Intl.DateTimeFormat("it-IT", {
+    return new Intl.DateTimeFormat(getIntlLocale(locale), {
       day: "2-digit",
       month: "long",
       year: "numeric",
@@ -183,31 +214,93 @@ function formatDisplayDate(value) {
   }
 
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return formatDisplayDate();
+  if (Number.isNaN(date.getTime())) return formatDisplayDate(undefined, locale);
 
-  return new Intl.DateTimeFormat("it-IT", {
+  return new Intl.DateTimeFormat(getIntlLocale(locale), {
     day: "2-digit",
     month: "long",
     year: "numeric",
   }).format(date);
 }
 
-function getWeatherSummaryFromCode(code) {
+function getWeatherSummaryFromCode(code, locale = DEFAULT_LOCALE) {
   const weatherCode = Number(code);
+  const labelSets = {
+    it: {
+      clear: "Sereno",
+      partlyCloudy: "Poco nuvoloso",
+      cloudy: "Nuvoloso",
+      fog: "Nebbia",
+      drizzle: "Pioviggine",
+      rain: "Pioggia",
+      snow: "Neve",
+      storm: "Temporale",
+      fallback: "Meteo aggiornato automaticamente",
+    },
+    en: {
+      clear: "Clear sky",
+      partlyCloudy: "Partly cloudy",
+      cloudy: "Cloudy",
+      fog: "Fog",
+      drizzle: "Drizzle",
+      rain: "Rain",
+      snow: "Snow",
+      storm: "Thunderstorm",
+      fallback: "Weather updated automatically",
+    },
+    es: {
+      clear: "Cielo despejado",
+      partlyCloudy: "Poco nuboso",
+      cloudy: "Nublado",
+      fog: "Niebla",
+      drizzle: "Llovizna",
+      rain: "Lluvia",
+      snow: "Nieve",
+      storm: "Tormenta",
+      fallback: "Tiempo actualizado automaticamente",
+    },
+    fr: {
+      clear: "Ciel degage",
+      partlyCloudy: "Peu nuageux",
+      cloudy: "Nuageux",
+      fog: "Brouillard",
+      drizzle: "Bruine",
+      rain: "Pluie",
+      snow: "Neige",
+      storm: "Orage",
+      fallback: "Meteo mise a jour automatiquement",
+    },
+    de: {
+      clear: "Klarer Himmel",
+      partlyCloudy: "Leicht bewolkt",
+      cloudy: "Bewolkt",
+      fog: "Nebel",
+      drizzle: "Nieselregen",
+      rain: "Regen",
+      snow: "Schnee",
+      storm: "Gewitter",
+      fallback: "Wetter automatisch aktualisiert",
+    },
+  };
+  const labels = labelSets[locale] ?? labelSets[DEFAULT_LOCALE];
 
-  if ([0].includes(weatherCode)) return "Sereno";
-  if ([1, 2].includes(weatherCode)) return "Poco nuvoloso";
-  if ([3].includes(weatherCode)) return "Nuvoloso";
-  if ([45, 48].includes(weatherCode)) return "Nebbia";
-  if ([51, 53, 55, 56, 57].includes(weatherCode)) return "Pioviggine";
-  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(weatherCode)) return "Pioggia";
-  if ([71, 73, 75, 77, 85, 86].includes(weatherCode)) return "Neve";
-  if ([95, 96, 99].includes(weatherCode)) return "Temporale";
+  if ([0].includes(weatherCode)) return labels.clear;
+  if ([1, 2].includes(weatherCode)) return labels.partlyCloudy;
+  if ([3].includes(weatherCode)) return labels.cloudy;
+  if ([45, 48].includes(weatherCode)) return labels.fog;
+  if ([51, 53, 55, 56, 57].includes(weatherCode)) return labels.drizzle;
+  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(weatherCode)) return labels.rain;
+  if ([71, 73, 75, 77, 85, 86].includes(weatherCode)) return labels.snow;
+  if ([95, 96, 99].includes(weatherCode)) return labels.storm;
 
-  return "Meteo aggiornato automaticamente";
+  return labels.fallback;
 }
 
-function parseOpenMeteoWind(data) {
+function formatLocalizedDirection(direction, locale = DEFAULT_LOCALE) {
+  return getCompassDirectionFromDegrees(getWindRotation(direction), locale);
+}
+
+function parseOpenMeteoWind(data, locale = DEFAULT_LOCALE) {
   const current = data?.current;
   const degrees = Number(current?.wind_direction_10m);
   const windSpeed = Number(current?.wind_speed_10m);
@@ -218,13 +311,13 @@ function parseOpenMeteoWind(data) {
   }
 
   return {
-    direction: getCompassDirectionFromDegrees(degrees),
+    direction: getCompassDirectionFromDegrees(degrees, locale),
     directionDegrees: degrees,
-    intensity: formatKnots(windSpeed),
-    gusts: Number.isFinite(gusts) ? formatKnots(gusts) : "",
-    updatedAt: formatWeatherTime(current.time) || "ora",
-    weatherSummary: getWeatherSummaryFromCode(current.weather_code),
-    sourceLabel: "Dati automatici",
+    intensity: formatWindSpeed(windSpeed, locale),
+    gusts: Number.isFinite(gusts) ? formatWindSpeed(gusts, locale) : "",
+    updatedAt: formatWeatherTime(current.time, locale) || "--:--",
+    weatherSummary: getWeatherSummaryFromCode(current.weather_code, locale),
+    sourceLabel: translations[locale]?.sea?.automaticData ?? translations[DEFAULT_LOCALE].sea.automaticData,
     sourceUrl: OPEN_METEO_SOURCE_URL,
     isAutomatic: true,
   };
@@ -426,7 +519,7 @@ function TodayConditionsCard({ beachData, currentStatus, quickWhatsAppUrl, t, we
             </div>
 
             <p className="mt-2 text-xs font-bold text-slate-800 sm:mt-3 sm:text-sm">
-              {windData.isAutomatic ? "Aggiornato automaticamente alle" : t.todayCard.updatedAt} {windData.updatedAt}
+              {windData.isAutomatic ? t.todayCard.autoUpdatedAt : t.todayCard.updatedAt} {windData.updatedAt}
             </p>
             <p className="mt-1 text-xs font-black text-beach-ink sm:text-sm">
               {t.todayCard.phone}: {formatWhatsAppDisplay(beachData.whatsappNumber)}
@@ -456,6 +549,7 @@ function PhotoOfDaySection({
   isAdminMode,
   isUploading,
   onChangePhoto,
+  t,
 }) {
   const canManagePhoto = isAdminMode && isAdminAuthenticated;
 
@@ -479,8 +573,8 @@ function PhotoOfDaySection({
         ) : (
           <div className="grid aspect-[4/3] w-full place-items-center bg-[#efe1cf] px-6 text-center sm:aspect-[16/9]">
             <div>
-              <p className="text-lg font-black text-beach-ink">Foto del Giorno</p>
-              <p className="mt-2 text-sm font-bold text-slate-700">Nessuna immagine disponibile al momento.</p>
+              <p className="text-lg font-black text-beach-ink">{t.photoSection.emptyTitle}</p>
+              <p className="mt-2 text-sm font-bold text-slate-700">{t.photoSection.emptyBody}</p>
             </div>
           </div>
         )}
@@ -488,11 +582,11 @@ function PhotoOfDaySection({
         {canManagePhoto ? (
           <div className="absolute inset-x-4 top-4 flex items-center justify-between gap-3 rounded-2xl bg-[#1f2933]/82 px-4 py-3 text-white shadow-soft backdrop-blur">
             <div>
-              <p className="text-sm font-black uppercase text-orange-200">Foto del Giorno</p>
+              <p className="text-sm font-black uppercase text-orange-200">{t.photoSection.kicker}</p>
               <p className="text-xs font-bold text-white/80">{dateLabel}</p>
             </div>
             <span className="inline-flex min-h-[46px] items-center justify-center rounded-2xl bg-white/92 px-4 py-2 text-sm font-black text-beach-ink">
-              {isUploading ? "Caricamento..." : "Cambia foto"}
+              {isUploading ? t.photoSection.uploading : t.photoSection.changePhoto}
             </span>
           </div>
         ) : null}
@@ -501,8 +595,8 @@ function PhotoOfDaySection({
       <div className="p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="section-kicker">Foto del Giorno</p>
-            <h3 className="mt-2 text-2xl font-black text-beach-ink">Scatto di oggi</h3>
+            <p className="section-kicker">{t.photoSection.kicker}</p>
+            <h3 className="mt-2 text-2xl font-black text-beach-ink">{t.photoSection.title}</h3>
           </div>
           <p className="rounded-2xl border border-[#ecd9bf] bg-[#fff7eb] px-4 py-2 text-sm font-black text-[#7a4d18]">{dateLabel}</p>
         </div>
@@ -516,6 +610,11 @@ function App() {
   const [form, setForm] = useState(initialForm);
   const [beachData, setBeachData] = useState(loadMorningUpdate);
   const [saveMessage, setSaveMessage] = useState("");
+  const [locale, setLocale] = useState(() => {
+    if (typeof window === "undefined") return DEFAULT_LOCALE;
+    const storedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY);
+    return translations[storedLocale] ? storedLocale : DEFAULT_LOCALE;
+  });
   const [activeTrackIndex, setActiveTrackIndex] = useState(0);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [musicMessage, setMusicMessage] = useState("");
@@ -540,20 +639,28 @@ function App() {
   });
   const soundtrackRef = useRef(null);
   const photoInputRef = useRef(null);
-  const t = translations[DEFAULT_LOCALE];
+  const t = translations[locale] ?? translations[DEFAULT_LOCALE];
   const activeTrack = SOUNDTRACK_TRACKS[activeTrackIndex] ?? SOUNDTRACK_TRACKS[0];
-  const currentStatus = statusStyles[beachData.status] ?? statusStyles["green-minus"];
+  const currentStatus = {
+    ...(statusStyles[beachData.status] ?? statusStyles["green-minus"]),
+    ...(t.statuses?.[beachData.status] ?? translations[DEFAULT_LOCALE].statuses[beachData.status] ?? {}),
+  };
+  const windLegendItems = windLegend.map((item) => ({
+    key: item.key,
+    label: t.statuses?.[item.key]?.label ?? item.label,
+    meaning: t.statuses?.[item.key]?.meaning ?? item.meaning,
+  }));
   const availabilityText = getAvailabilityText(beachData.availability);
   const isGreenStatus = beachData.status?.startsWith("green");
   const whatsappDisplay = formatWhatsAppDisplay(beachData.whatsappNumber);
   const fallbackWind = {
-    direction: beachData.meteoWind.direction,
+    direction: formatLocalizedDirection(beachData.meteoWind.direction, locale),
     directionDegrees: getWindRotation(beachData.meteoWind.direction),
     intensity: beachData.meteoWind.intensity,
     gusts: "",
     updatedAt: beachData.meteoWind.updatedAt,
     weatherSummary: beachData.weather.summary,
-    sourceLabel: "Dato manuale",
+    sourceLabel: t.sea.manualData,
     sourceUrl: beachData.meteoWind.sourceUrl,
     isAutomatic: false,
   };
@@ -561,15 +668,15 @@ function App() {
   const weatherSummary = automaticWind?.weatherSummary ?? beachData.weather.summary;
   const windRotation = displayedWind.directionDegrees;
   const displayedDailyPhoto = photoOfDayUrl ?? beachData.dailySeaPhoto;
-  const displayedPhotoDate = formatDisplayDate(photoOfDayUploadedAt);
+  const displayedPhotoDate = formatDisplayDate(photoOfDayUploadedAt, locale);
   const quickWhatsAppText = encodeURIComponent(
     [
-      "Ciao Noleggio Numero 5, vorrei prenotare attrezzatura da spiaggia.",
+      t.booking.quickMessageIntro,
       "",
-      "Nome:",
-      "Data:",
-      "Numero ombrelloni:",
-      "Numero lettini:",
+      `${t.booking.fields.name}:`,
+      `${t.booking.fields.date}:`,
+      `${t.booking.fields.umbrellas}:`,
+      `${t.booking.fields.sunbeds}:`,
     ].join("\n"),
   );
   const quickWhatsAppUrl = `https://wa.me/${normalizeWhatsAppNumber(beachData.whatsappNumber)}?text=${quickWhatsAppText}`;
@@ -590,6 +697,11 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+  }, [locale]);
+
+  useEffect(() => {
     let isActive = true;
 
     async function loadAutomaticWind() {
@@ -601,7 +713,7 @@ function App() {
         }
 
         const data = await response.json();
-        const parsedWind = parseOpenMeteoWind(data);
+        const parsedWind = parseOpenMeteoWind(data, locale);
 
         if (!isActive) return;
         setAutomaticWind(parsedWind);
@@ -620,7 +732,7 @@ function App() {
       isActive = false;
       window.clearInterval(refreshId);
     };
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     let isActive = true;
@@ -668,7 +780,7 @@ function App() {
       },
       {
         title: t.highlights.whatsapp,
-        text: `Prenota con ${whatsappDisplay}`,
+        text: `${t.highlights.whatsappWith} ${whatsappDisplay}`,
         icon: IconWhatsApp,
         tone: "orange",
       },
@@ -816,12 +928,12 @@ function App() {
 
   function buildWhatsAppMessage() {
     return [
-      "Ciao Noleggio Numero 5, vorrei prenotare attrezzatura da spiaggia.",
+      t.booking.requestMessageIntro,
       "",
-      `Nome: ${form.name}`,
-      `Data: ${form.date}`,
-      `Numero ombrelloni: ${form.umbrellas}`,
-      `Numero lettini: ${form.sunbeds}`,
+      `${t.booking.fields.name}: ${form.name}`,
+      `${t.booking.fields.date}: ${form.date}`,
+      `${t.booking.fields.umbrellas}: ${form.umbrellas}`,
+      `${t.booking.fields.sunbeds}: ${form.sunbeds}`,
     ].join("\n");
   }
 
@@ -1012,6 +1124,39 @@ function App() {
     );
   }
 
+  function renderLanguageSwitcher(wrapperClassName = "") {
+    return (
+        <div className={`flex flex-wrap items-center gap-2 ${wrapperClassName}`} aria-label="Language selector">
+        {LOCALE_OPTIONS.map((option) => {
+          const isActive = locale === option.code;
+
+          return (
+            <button
+              key={option.code}
+              type="button"
+              lang={option.code}
+              aria-label={option.name}
+              aria-pressed={isActive}
+              className={`inline-flex h-[46px] w-[46px] shrink-0 flex-col items-center justify-center rounded-full border px-1 text-beach-ink shadow-soft backdrop-blur transition duration-300 sm:h-[50px] sm:w-[50px] ${
+                isActive
+                  ? "border-[#1f2933] bg-[#1f2933] text-white"
+                  : "border-white/80 bg-white/88 hover:-translate-y-0.5 hover:bg-white"
+              }`}
+              onClick={() => setLocale(option.code)}
+            >
+              <span className="text-sm leading-none sm:text-base" aria-hidden="true">
+                {option.flag}
+              </span>
+              <span className="mt-0.5 text-[0.52rem] font-black uppercase leading-none tracking-[0.08em] sm:text-[0.58rem]">
+                {option.shortLabel}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   function renderSoundtrackControl(wrapperClassName = "", buttonClassName = "", selectClassName = "") {
     return (
       <div className={`flex items-center gap-2 ${wrapperClassName}`}>
@@ -1055,9 +1200,10 @@ function App() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#fff5e4]/55 via-[#fff8ed]/12 to-beach-foam/92" />
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-beach-foam via-beach-foam/80 to-transparent" />
 
-        <nav className="relative z-10 mx-auto flex max-w-6xl items-center justify-end gap-3 px-5 py-5 sm:px-8">
-          <div className="flex flex-1 justify-start gap-2 text-sm font-black sm:justify-end">
-            {renderSoundtrackControl("hidden sm:flex", "", "w-28")}
+        <nav className="relative z-10 mx-auto flex max-w-6xl flex-col gap-3 px-5 py-5 sm:px-8 lg:flex-row lg:items-center lg:justify-end">
+          <div className="order-2 flex w-full flex-wrap justify-center gap-2 text-sm font-black lg:order-1 lg:flex-1 lg:justify-end">
+            {renderLanguageSwitcher()}
+            {renderSoundtrackControl("hidden lg:flex", "", "w-28")}
             <a className="nav-pill" href="#prenota">
               {t.nav.book}
             </a>
@@ -1066,7 +1212,7 @@ function App() {
             </a>
           </div>
 
-          <a className="flex min-h-[50px] items-center gap-2 rounded-2xl bg-white/80 px-3 py-2 text-beach-ink shadow-soft backdrop-blur sm:gap-3" href="#top" aria-label="Noleggio Numero 5">
+          <a className="order-1 flex min-h-[50px] items-center gap-2 self-end rounded-2xl bg-white/80 px-3 py-2 text-beach-ink shadow-soft backdrop-blur sm:gap-3 lg:order-2" href="#top" aria-label="Noleggio Numero 5">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-white/90 text-beach-ink">
               <LogoMark className="h-8 w-8" />
             </span>
@@ -1153,21 +1299,21 @@ function App() {
               <div className="mt-4 grid gap-3">
                 <div className={`rounded-2xl border px-4 py-3 text-sm font-black shadow-soft ${currentStatus.className}`}>
                   <span className={`mr-2 inline-block h-3 w-3 rounded-full ${currentStatus.dotClassName}`} />
-                  Oggi: {currentStatus.summary}
+                  {t.sea.title}: {currentStatus.summary}
                 </div>
                 <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-black text-slate-800 shadow-soft backdrop-blur">
-                  Vento automatico: <span className="text-beach-ink">{displayedWind.direction} · {displayedWind.intensity}</span>
+                  {t.booking.infoWindLabel}: <span className="text-beach-ink">{displayedWind.direction} · {displayedWind.intensity}</span>
                 </div>
                 <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-black text-slate-800 shadow-soft backdrop-blur">
-                  Meteo sintetico: <span className="text-beach-ink">{weatherSummary}</span>
+                  {t.booking.infoWeatherLabel}: <span className="text-beach-ink">{weatherSummary}</span>
                 </div>
                 {automaticWindError ? (
                   <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-black text-orange-950 shadow-soft">
-                    Dato automatico non disponibile: uso il vento manuale.
+                    {t.sea.automaticFallback}
                   </div>
                 ) : null}
                 <div className="rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-black text-slate-800 shadow-soft backdrop-blur">
-                  Disponibilita': <span className="text-beach-ink">{availabilityText} · {beachData.availability.note}</span>
+                  {t.booking.infoAvailabilityLabel}: <span className="text-beach-ink">{availabilityText} · {beachData.availability.note}</span>
                 </div>
               </div>
             </div>
@@ -1175,7 +1321,7 @@ function App() {
             <form className="premium-card p-5 sm:p-6" onSubmit={handleSubmit}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block sm:col-span-2">
-                  <span className="field-label">Nome</span>
+                  <span className="field-label">{t.booking.fields.name}</span>
                   <input
                     className="field-input"
                     name="name"
@@ -1188,7 +1334,7 @@ function App() {
                 </label>
 
                 <label className="block sm:col-span-2">
-                  <span className="field-label">Data</span>
+                  <span className="field-label">{t.booking.fields.date}</span>
                   <input
                     className="field-input"
                     name="date"
@@ -1201,7 +1347,7 @@ function App() {
                 </label>
 
                 <label className="block">
-                  <span className="field-label">Numero ombrelloni</span>
+                  <span className="field-label">{t.booking.fields.umbrellas}</span>
                   <input
                     className="field-input"
                     name="umbrellas"
@@ -1215,7 +1361,7 @@ function App() {
                 </label>
 
                 <label className="block">
-                  <span className="field-label">Numero lettini</span>
+                  <span className="field-label">{t.booking.fields.sunbeds}</span>
                   <input
                     className="field-input"
                     name="sunbeds"
@@ -1233,7 +1379,7 @@ function App() {
                 className="premium-cta mt-5 w-full"
                 type="submit"
               >
-                Invia richiesta WhatsApp
+                {t.booking.submit}
               </button>
             </form>
           </div>
@@ -1263,6 +1409,7 @@ function App() {
                   isAdminMode={isAdminMode}
                   isUploading={photoUploadState === "uploading"}
                   onChangePhoto={requestPhotoSelection}
+                  t={t}
                 />
 
                 {isAdminMode ? (
@@ -1375,25 +1522,25 @@ function App() {
               </div>
 
               <aside className="premium-glass p-5 sm:p-6">
-                <p className="text-sm font-black uppercase text-orange-200">Vento automatico</p>
+                <p className="text-sm font-black uppercase text-orange-200">{t.sea.automaticWind}</p>
                 <h3 className="mt-3 text-4xl font-black leading-tight text-white">
                   {displayedWind.direction} · {displayedWind.intensity}
                 </h3>
                 <p className="mt-2 text-sm font-bold text-white/80">
-                  {displayedWind.isAutomatic ? "Aggiornato automaticamente alle" : "Aggiornato alle"} {displayedWind.updatedAt}
+                  {displayedWind.isAutomatic ? t.sea.updatedAutomaticallyAt : t.sea.updatedAt} {displayedWind.updatedAt}
                 </p>
-                {displayedWind.gusts ? <p className="mt-1 text-sm font-bold text-white/70">Raffiche: {displayedWind.gusts}</p> : null}
+                {displayedWind.gusts ? <p className="mt-1 text-sm font-bold text-white/70">{t.sea.gusts}: {displayedWind.gusts}</p> : null}
                 <a
                   className="mt-3 inline-block text-sm font-bold text-orange-200 underline decoration-orange-200/40 underline-offset-4"
                   href={displayedWind.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Fonte: {displayedWind.sourceLabel}
+                  {t.sea.source}: {displayedWind.sourceLabel}
                 </a>
 
                 <div className="mt-6 grid gap-3">
-                  {windLegend.map((item) => {
+                  {windLegendItems.map((item) => {
                     const isActive = item.key === beachData.status;
                     const style = statusStyles[item.key];
 
@@ -1451,12 +1598,12 @@ function App() {
                 </div>
               </div>
               <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-between gap-2 bg-[#1f2933]/90 px-4 py-3 text-white shadow-soft backdrop-blur-xl">
-                <p className="text-xs font-black uppercase text-orange-200 sm:text-sm">Vento automatico</p>
+                <p className="text-xs font-black uppercase text-orange-200 sm:text-sm">{t.sea.automaticWind}</p>
                 <p className="text-sm font-black sm:text-base">
                   {displayedWind.direction} · {displayedWind.intensity}
                 </p>
                 <p className="text-xs font-bold text-white/80 sm:text-sm">
-                  {displayedWind.isAutomatic ? "Aggiornato ogni ora" : "Dato manuale"} · {displayedWind.updatedAt}
+                  {displayedWind.isAutomatic ? t.sea.updatedHourly : t.sea.manualData} · {displayedWind.updatedAt}
                 </p>
                 <a
                   className="text-xs font-bold text-orange-200 underline decoration-orange-200/40 underline-offset-4"
@@ -1464,7 +1611,7 @@ function App() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Fonte automatica
+                  {t.sea.source}: {displayedWind.sourceLabel}
                 </a>
               </div>
             </div>
@@ -1712,7 +1859,7 @@ function App() {
 
       <footer className="bg-[#1f2933] px-5 py-8 text-center text-sm font-semibold text-white/80 sm:px-8">
         <p className="text-lg font-black uppercase text-[#ff8c00]">Noleggio Numero 5</p>
-        <p className="mt-1">Marina di Campo · Prenota su WhatsApp {whatsappDisplay}</p>
+        <p className="mt-1">{t.footer.line} {whatsappDisplay}</p>
       </footer>
 
       <div className="fixed bottom-[5.6rem] right-4 z-50 sm:hidden">
