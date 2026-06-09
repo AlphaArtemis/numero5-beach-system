@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { today, windLegend } from "./data/today";
 import { translations } from "./data/translations";
 import { compressImageFile } from "./utils/imageCompression";
-import { fetchPhotoOfTheDay, uploadPhotoOfTheDay, verifyAdminPin } from "./services/photoService";
+import { fetchPhotoOfTheDay, uploadPhotoOfTheDay, verifyAdminAccess } from "./services/photoService";
 
 const STORAGE_KEY = "numero5-morning-update";
 const ADMIN_SESSION_KEY = "numero5-photo-admin-session";
 const ADMIN_PIN_KEY = "numero5-photo-admin-pin";
+const ADMIN_ACCESS_KEY_STORAGE = "numero5-photo-admin-key";
 const DEFAULT_LOCALE = "it";
 const LOCALE_STORAGE_KEY = "numero5-site-locale";
 const LOCALE_OPTIONS = [
@@ -86,6 +87,23 @@ const initialForm = {
   umbrellas: "1",
   sunbeds: "2",
 };
+
+function getAdminAccessKeyFromUrl() {
+  if (typeof window === "undefined") return "";
+
+  const params = new URLSearchParams(window.location.search);
+  return params.get("key") || params.get("adminKey") || params.get("accessKey") || "";
+}
+
+function removeAdminAccessKeyFromUrl() {
+  if (typeof window === "undefined") return;
+
+  const url = new URL(window.location.href);
+  url.searchParams.delete("key");
+  url.searchParams.delete("adminKey");
+  url.searchParams.delete("accessKey");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+}
 
 function getTodayInputValue() {
   const date = new Date();
@@ -633,6 +651,10 @@ function App() {
     if (typeof window === "undefined") return "";
     return window.localStorage.getItem(ADMIN_PIN_KEY) || "";
   });
+  const [adminAccessKey, setAdminAccessKey] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem(ADMIN_ACCESS_KEY_STORAGE) || getAdminAccessKeyFromUrl();
+  });
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(ADMIN_SESSION_KEY) === "true";
@@ -700,6 +722,59 @@ function App() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
   }, [locale]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const urlAccessKey = getAdminAccessKeyFromUrl();
+    if (!urlAccessKey) return;
+
+    setAdminAccessKey(urlAccessKey);
+    window.localStorage.setItem(ADMIN_ACCESS_KEY_STORAGE, urlAccessKey);
+  }, []);
+
+  useEffect(() => {
+    if (!isAdminMode || !adminAccessKey || isAdminAuthenticated) return;
+
+    let isActive = true;
+
+    async function unlockAdminFromKey() {
+      setIsAdminVerifying(true);
+      setPhotoUploadState("loading");
+      setPhotoUploadMessage("Verifica accesso riservato...");
+
+      try {
+        await verifyAdminAccess({ accessKey: adminAccessKey });
+        if (!isActive) return;
+
+        setIsAdminAuthenticated(true);
+        setPhotoUploadState("success");
+        setPhotoUploadMessage("Accesso admin attivo da link riservato.");
+        window.localStorage.setItem(ADMIN_SESSION_KEY, "true");
+        window.localStorage.setItem(ADMIN_ACCESS_KEY_STORAGE, adminAccessKey);
+        removeAdminAccessKeyFromUrl();
+      } catch (error) {
+        if (!isActive) return;
+
+        setIsAdminAuthenticated(false);
+        setAdminAccessKey("");
+        setPhotoUploadState("error");
+        setPhotoUploadMessage(error.message || "Link admin non valido.");
+        window.localStorage.removeItem(ADMIN_SESSION_KEY);
+        window.localStorage.removeItem(ADMIN_ACCESS_KEY_STORAGE);
+      } finally {
+        if (isActive) {
+          setIsAdminVerifying(false);
+        }
+      }
+    }
+
+    unlockAdminFromKey();
+
+    return () => {
+      isActive = false;
+    };
+  }, [adminAccessKey, isAdminAuthenticated, isAdminMode]);
 
   useEffect(() => {
     let isActive = true;
@@ -838,7 +913,7 @@ function App() {
     setIsAdminVerifying(true);
 
     try {
-      await verifyAdminPin(adminPinInput.trim());
+      await verifyAdminAccess({ pin: adminPinInput.trim() });
       setAdminPin(adminPinInput.trim());
       setIsAdminAuthenticated(true);
       window.localStorage.setItem(ADMIN_SESSION_KEY, "true");
@@ -890,15 +965,16 @@ function App() {
     setPhotoUploadMessage("Caricamento in corso...");
 
     try {
+      const effectiveAccessKey = adminAccessKey;
       let effectivePin = adminPin;
 
-      if (!effectivePin) {
+      if (!effectiveAccessKey && !effectivePin) {
         if (!adminPinInput.trim()) {
           throw new Error("Inserisci il PIN admin prima della conferma.");
         }
 
         setIsAdminVerifying(true);
-        await verifyAdminPin(adminPinInput.trim());
+        await verifyAdminAccess({ pin: adminPinInput.trim() });
         effectivePin = adminPinInput.trim();
         setAdminPin(effectivePin);
         setIsAdminAuthenticated(true);
@@ -910,6 +986,7 @@ function App() {
         blob: pendingPhoto.blob,
         fileName: pendingPhoto.fileName,
         pin: effectivePin,
+        accessKey: effectiveAccessKey,
       });
 
       setPhotoOfDayUrl(result.url);
@@ -1418,7 +1495,13 @@ function App() {
                       <div>
                         <p className="text-sm font-black uppercase text-[#e97900]">Area riservata foto</p>
                         <p className="mt-1 text-sm font-bold text-slate-700">
-                          {isAdminAuthenticated ? "Gestione foto attiva solo su questo dispositivo." : "Accesso privato richiesto per mostrare Aggiungi foto."}
+                          {isAdminAuthenticated
+                            ? adminAccessKey
+                              ? "Gestione foto attiva da link riservato su questo dispositivo."
+                              : "Gestione foto attiva solo su questo dispositivo."
+                            : isAdminVerifying && adminAccessKey
+                              ? "Verifica in corso del link admin riservato..."
+                              : "Accesso privato richiesto per mostrare Aggiungi foto."}
                         </p>
                       </div>
                       {isAdminAuthenticated ? (
@@ -1432,7 +1515,7 @@ function App() {
                       ) : null}
                     </div>
 
-                    {!isAdminAuthenticated ? (
+                    {!isAdminAuthenticated && !isAdminVerifying ? (
                       <div className="mt-4 space-y-4">
                         <label className="block">
                           <span className="field-label">PIN admin</span>
@@ -1458,6 +1541,10 @@ function App() {
                           </p>
                         ) : null}
                       </div>
+                    ) : null}
+
+                    {!isAdminAuthenticated && isAdminVerifying && photoUploadMessage ? (
+                      <p className="mt-4 text-sm font-black text-beach-reef">{photoUploadMessage}</p>
                     ) : null}
 
                     {isAdminAuthenticated && isPhotoManagerOpen ? (
@@ -1490,7 +1577,7 @@ function App() {
                         </div>
 
                         <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-900">
-                          Accesso admin gia' attivo su questo dispositivo.
+                          {adminAccessKey ? "Accesso admin riservato attivo su questo dispositivo." : "Accesso admin gia' attivo su questo dispositivo."}
                         </p>
 
                         <div className="flex flex-col gap-3 sm:flex-row">

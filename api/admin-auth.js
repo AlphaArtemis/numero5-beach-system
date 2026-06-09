@@ -2,6 +2,10 @@ function getAdminPin() {
   return process.env.ADMIN_PIN || process.env.VITE_ADMIN_PIN || "";
 }
 
+function getAdminAccessKey() {
+  return process.env.ADMIN_ACCESS_KEY || "";
+}
+
 async function getRequestBody(request) {
   if (typeof request.body === "string") {
     try {
@@ -28,14 +32,19 @@ export default async function handler(request, response) {
   }
 
   const configuredPin = getAdminPin();
-  if (!configuredPin) {
-    return response.status(500).json({ error: "Admin PIN non configurato." });
+  const configuredAccessKey = getAdminAccessKey();
+  if (!configuredPin && !configuredAccessKey) {
+    return response.status(500).json({ error: "Accesso admin non configurato." });
   }
 
   const body = await getRequestBody(request);
-  if (body.pin !== configuredPin) {
-    return response.status(401).json({ error: "PIN non valido." });
+  if (configuredAccessKey && body.accessKey === configuredAccessKey) {
+    return response.status(200).json({ ok: true, authMode: "key" });
   }
 
-  return response.status(200).json({ ok: true });
+  if (configuredPin && body.pin === configuredPin) {
+    return response.status(200).json({ ok: true, authMode: "pin" });
+  }
+
+  return response.status(401).json({ error: "Accesso admin non valido." });
 }

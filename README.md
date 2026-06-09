@@ -41,6 +41,14 @@ Per entrare in modalita' admin apri la web app con:
 https://numero5-beach-system.vercel.app/?admin=true
 ```
 
+Se vuoi un accesso riservato senza dover digitare ogni volta il PIN, puoi usare un link admin con chiave segreta:
+
+```text
+https://numero5-beach-system.vercel.app/?admin=true&key=LA_TUA_CHIAVE
+```
+
+Dopo la verifica iniziale, la chiave viene salvata sul dispositivo e rimossa dall'URL visibile.
+
 oppure in locale:
 
 ```text
@@ -63,6 +71,20 @@ Risultato:
 - viene caricata su `Vercel Blob`
 - diventa pubblica per tutti i visitatori del sito
 
+### Accesso admin riservato
+
+Se configuri una chiave privata server-side, puoi evitare il PIN usando un link admin dedicato.
+
+Variabile ambiente:
+
+- `ADMIN_ACCESS_KEY`
+
+Comportamento:
+
+- il sito mostra la UI admin con `?admin=true`
+- se nell'URL e' presente anche `key=...` e la chiave corrisponde a `ADMIN_ACCESS_KEY`, l'accesso viene sbloccato senza PIN
+- la chiave viene poi rimossa dall'URL visibile e resta attiva sul dispositivo
+
 ### Compressione immagine
 
 Prima dell'upload la foto viene:
@@ -82,8 +104,9 @@ La UI admin compare solo quando l'URL contiene `?admin=true` o `?admin=1`.
 Protezione implementata:
 
 - verifica PIN tramite route `api/admin-auth.js`
+- chiave admin privata opzionale tramite URL + verifica server-side
 - sessione admin salvata in `localStorage`
-- upload protetto via header `x-admin-pin`
+- upload protetto via header `x-admin-pin` oppure `x-admin-key`
 
 Limite noto:
 
@@ -95,6 +118,7 @@ Limite noto:
 Su Vercel aggiungi queste env var:
 
 - `ADMIN_PIN`
+- `ADMIN_ACCESS_KEY`
 - `BLOB_READ_WRITE_TOKEN`
 
 Puoi partire dal file:
@@ -107,6 +131,7 @@ Esempio locale:
 
 ```bash
 ADMIN_PIN=1234
+ADMIN_ACCESS_KEY=chiave_admin_privata
 BLOB_READ_WRITE_TOKEN=vercel_blob_rw_xxxxx
 ```
 

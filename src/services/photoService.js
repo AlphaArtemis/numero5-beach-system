@@ -28,23 +28,23 @@ export async function fetchPhotoOfTheDay() {
   return response.json();
 }
 
-export async function verifyAdminPin(pin) {
+export async function verifyAdminAccess({ pin, accessKey } = {}) {
   const response = await fetch(ADMIN_ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ pin }),
+    body: JSON.stringify({ pin, accessKey }),
   });
 
   if (!response.ok) {
-    throw new Error("PIN non valido.");
+    throw new Error("Accesso admin non valido.");
   }
 
   return response.json();
 }
 
-export async function uploadPhotoOfTheDay({ blob, fileName, pin, onUploadProgress }) {
+export async function uploadPhotoOfTheDay({ blob, fileName, pin, accessKey, onUploadProgress }) {
   const extension = getFileExtension(fileName, blob.type);
   const pathname = `photo-of-day/${Date.now()}-numero5.${extension}`;
 
@@ -53,7 +53,8 @@ export async function uploadPhotoOfTheDay({ blob, fileName, pin, onUploadProgres
     contentType: blob.type || "image/jpeg",
     handleUploadUrl: UPLOAD_ENDPOINT,
     headers: {
-      "x-admin-pin": pin,
+      ...(pin ? { "x-admin-pin": pin } : {}),
+      ...(accessKey ? { "x-admin-key": accessKey } : {}),
     },
     onUploadProgress,
   });
