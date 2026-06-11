@@ -75,7 +75,7 @@ export default async function handler(request, response) {
         allowedContentTypes: ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"],
         maximumSizeInBytes: 4_000_000,
         addRandomSuffix: false,
-        allowOverwrite: false,
+        allowOverwrite: true,
         cacheControlMaxAge: 60 * 60 * 24 * 7,
         validUntil: new Date(Date.now() + 5 * 60 * 1000),
       }),

@@ -3,17 +3,19 @@ import { upload } from "@vercel/blob/client";
 const PHOTO_ENDPOINT = "/api/photo-of-day";
 const UPLOAD_ENDPOINT = "/api/photo-of-day-upload";
 const ADMIN_ENDPOINT = "/api/admin-auth";
+const PHOTO_OF_DAY_PATHNAME = "photo-of-day/current.jpg";
 
-function getFileExtension(fileName = "", contentType = "") {
-  const normalizedName = fileName.toLowerCase();
+function withPhotoVersion(url, versionValue) {
+  if (!url) return url;
 
-  if (normalizedName.endsWith(".png")) return "png";
-  if (normalizedName.endsWith(".webp")) return "webp";
-  if (normalizedName.endsWith(".heic")) return "heic";
-  if (normalizedName.endsWith(".heif")) return "heif";
-  if (contentType === "image/png") return "png";
-  if (contentType === "image/webp") return "webp";
-  return "jpg";
+  try {
+    const parsedUrl = new URL(url);
+    parsedUrl.searchParams.set("v", String(versionValue));
+    return parsedUrl.toString();
+  } catch {
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}v=${encodeURIComponent(String(versionValue))}`;
+  }
 }
 
 export async function fetchPhotoOfTheDay() {
@@ -44,11 +46,9 @@ export async function verifyAdminAccess({ pin, accessKey } = {}) {
   return response.json();
 }
 
-export async function uploadPhotoOfTheDay({ blob, fileName, pin, accessKey, onUploadProgress }) {
-  const extension = getFileExtension(fileName, blob.type);
-  const pathname = `photo-of-day/${Date.now()}-numero5.${extension}`;
-
-  return upload(pathname, blob, {
+export async function uploadPhotoOfTheDay({ blob, pin, accessKey, onUploadProgress }) {
+  const versionStamp = Date.now();
+  const result = await upload(PHOTO_OF_DAY_PATHNAME, blob, {
     access: "public",
     contentType: blob.type || "image/jpeg",
     handleUploadUrl: UPLOAD_ENDPOINT,
@@ -58,4 +58,9 @@ export async function uploadPhotoOfTheDay({ blob, fileName, pin, accessKey, onUp
     },
     onUploadProgress,
   });
+
+  return {
+    ...result,
+    url: withPhotoVersion(result.url, versionStamp),
+  };
 }

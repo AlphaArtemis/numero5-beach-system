@@ -69,7 +69,19 @@ Risultato:
 
 - la foto viene compressa lato client
 - viene caricata su `Vercel Blob`
+- la nuova foto sovrascrive sempre la precedente
 - diventa pubblica per tutti i visitatori del sito
+
+### Foto unica sovrascrivibile
+
+La `Foto del Giorno` non viene archiviata come storico infinito.
+
+Comportamento scelto:
+
+- viene mantenuta una sola immagine pubblica
+- il file usato e' sempre `photo-of-day/current.jpg`
+- ogni nuovo upload sostituisce quello precedente
+- il sito aggiunge un parametro versione per mostrare subito la nuova immagine anche dopo l'overwrite
 
 ### Accesso admin riservato
 

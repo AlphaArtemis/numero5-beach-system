@@ -984,7 +984,6 @@ function App() {
 
       const result = await uploadPhotoOfTheDay({
         blob: pendingPhoto.blob,
-        fileName: pendingPhoto.fileName,
         pin: effectivePin,
         accessKey: effectiveAccessKey,
       });
